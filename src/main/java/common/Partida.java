@@ -5,7 +5,11 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.Objects;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 /**
  *
@@ -17,15 +21,30 @@ public class Partida implements Serializable {
     private static final long serialVersionUID = 1L;
     
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private int id;
     
+    @Temporal(TemporalType.TIMESTAMP)
     private Timestamp dataPartida;
     
     private List<String> paraules;
     
     private List<Usuari> usuaris;
     
-    private int dificultat;
+    private String dificultat;
+    
+    private boolean actual;
+
+    public Partida() {
+    }
+
+    public Partida(Timestamp dataPartida, List<String> paraules, List<Usuari> usuaris, String dificultat, boolean actual) {
+        this.dataPartida = dataPartida;
+        this.paraules = paraules;
+        this.usuaris = usuaris;
+        this.dificultat = dificultat;
+        this.actual = actual;
+    }
 
     public int getId() {
         return id;
@@ -59,22 +78,31 @@ public class Partida implements Serializable {
         this.usuaris = usuaris;
     }
 
-    public int getDificultat() {
+    public String getDificultat() {
         return dificultat;
     }
 
-    public void setDificultat(int dificultat) {
+    public void setDificultat(String dificultat) {
         this.dificultat = dificultat;
+    }
+
+    public boolean isActual() {
+        return actual;
+    }
+
+    public void setActual(boolean actual) {
+        this.actual = actual;
     }
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 67 * hash + this.id;
-        hash = 67 * hash + Objects.hashCode(this.dataPartida);
-        hash = 67 * hash + Objects.hashCode(this.paraules);
-        hash = 67 * hash + Objects.hashCode(this.usuaris);
-        hash = 67 * hash + this.dificultat;
+        int hash = 3;
+        hash = 79 * hash + this.id;
+        hash = 79 * hash + Objects.hashCode(this.dataPartida);
+        hash = 79 * hash + Objects.hashCode(this.paraules);
+        hash = 79 * hash + Objects.hashCode(this.usuaris);
+        hash = 79 * hash + Objects.hashCode(this.dificultat);
+        hash = 79 * hash + (this.actual ? 1 : 0);
         return hash;
     }
 
@@ -93,7 +121,10 @@ public class Partida implements Serializable {
         if (this.id != other.id) {
             return false;
         }
-        if (this.dificultat != other.dificultat) {
+        if (this.actual != other.actual) {
+            return false;
+        }
+        if (!Objects.equals(this.dificultat, other.dificultat)) {
             return false;
         }
         if (!Objects.equals(this.dataPartida, other.dataPartida)) {
@@ -107,7 +138,7 @@ public class Partida implements Serializable {
 
     @Override
     public String toString() {
-        return "Partida{" + "id=" + id + ", dataPartida=" + dataPartida + ", paraules=" + paraules + ", usuaris=" + usuaris + ", dificultat=" + dificultat + '}';
+        return "Partida{" + "id=" + id + ", dataPartida=" + dataPartida + ", paraules=" + paraules + ", usuaris=" + usuaris + ", dificultat=" + dificultat + ", actual=" + actual + '}';
     }
     
 }

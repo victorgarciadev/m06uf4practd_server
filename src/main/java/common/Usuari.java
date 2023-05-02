@@ -2,8 +2,10 @@ package common;
 
 import java.io.Serializable;
 import java.util.Objects;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.validation.constraints.NotNull;
 
 /**
  *
@@ -17,6 +19,8 @@ public class Usuari implements Serializable {
     @Id
     private String email;
     
+    @NotNull(message = "Un usuari ha de tenir un nickname")
+    @Column(unique = true)
     private String nickname;
     
     private int puntuacio;
