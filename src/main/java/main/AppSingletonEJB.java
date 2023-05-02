@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package main;
 
 import java.io.File;
@@ -19,19 +14,16 @@ import javax.ejb.Singleton;
 import javax.ejb.Startup;
 
 /**
- *
- * @author manel
  * 
- * 
+ * @author GrupD
  */
-@Singleton //A Singleton Session Bean maintains the state of the bean for the complete lifecycle of the application.
-@Startup //the javax.ejb.Startup annotation to inform the EJB container to initialize the bean at the startup
-@ConcurrencyManagement(ConcurrencyManagementType.CONTAINER) //Simply put, in container-managed concurrency, the container controls how clients' access to methods
+@Singleton 
+@Startup 
+@ConcurrencyManagement(ConcurrencyManagementType.CONTAINER) 
 public class AppSingletonEJB {
     
-    // versi√≥ i data del servidor
-    private static final String APP_VERSION = "1.3";
-    private static final String DATE_VERSION = "20/04/2023";
+    private static final String APP_VERSION = "0.1";
+    private static final String DATE_VERSION = "02/05/2023";
     
     private static final Logger log = Logger.getLogger(AppSingletonEJB.class.getName());
     
@@ -54,7 +46,7 @@ public class AppSingletonEJB {
     }
     
     /***
-     * Obt√© el timestamp d'inici de l'aplicaci√≥
+     * ObtÈ el timestamp d'inici de l'aplicaciÛ
      * @return 
      */
     @Lock(LockType.READ)
@@ -64,7 +56,7 @@ public class AppSingletonEJB {
     }
     
     /***
-     * Obt√© la darrera data d'actualitzaci√≥ de la BBDD
+     * ObtÈ la darrera data d'actualitzaciÛ de la BBDD
      * @return 
      */
     @Lock(LockType.READ)
@@ -74,7 +66,7 @@ public class AppSingletonEJB {
     }
 
     /***
-     * Estableix la data d'actualitzaci√≥ de la BBDD
+     * Estableix la data d'actualitzaciÛ de la BBDD
      */
     @Lock(LockType.WRITE)
     public void setLastDBUpdateUTC() {
@@ -84,7 +76,7 @@ public class AppSingletonEJB {
     }
     
     /***
-     * Mostra un banner amb la versi√≥
+     * Mostra un banner amb la versiÛ
      */
     private void  showLogo()
     { 
@@ -111,7 +103,7 @@ public class AppSingletonEJB {
         
         banner.append(System.lineSeparator());
         banner.append(System.lineSeparator());
-        banner.append("Versi√≥ del servidor: " + AppSingletonEJB.APP_VERSION + " de " + AppSingletonEJB.DATE_VERSION);
+        banner.append("VersiÛ del servidor: " + AppSingletonEJB.APP_VERSION + " de " + AppSingletonEJB.DATE_VERSION);
         banner.append(System.lineSeparator());
             
         log.log(Level.INFO, banner.toString());
