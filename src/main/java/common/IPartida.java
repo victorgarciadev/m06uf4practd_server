@@ -23,18 +23,11 @@ public interface IPartida {
     public void finalitzaPartida() throws PartidaException;
     
     /**
-     * Retorna l'id de la partida actual
-     * @return 
-     * @throws common.PartidaException 
-     */
-    public Partida getPartidaActual() throws PartidaException;
-    
-    /**
      * Llista dels jugadors d'una partida
      * @return 
      * @throws common.PartidaException 
      */
-    public List<String> getLlistatJugadors() throws PartidaException;
+    public List<Usuari> getLlistatJugadors() throws PartidaException;
     
     /**
      * Actualitza la puntuació d'un jugador a una partida
@@ -49,7 +42,7 @@ public interface IPartida {
      * @param nomJugador 
      * @throws common.PartidaException 
      */
-    public void afegirJugador(String nomJugador) throws PartidaException;
+    public void afegirJugador(Usuari nomJugador) throws PartidaException;
     
     /**
      * Comprova la paraula enviada de l'usuari
@@ -58,5 +51,10 @@ public interface IPartida {
      * @return 
      * @throws common.PartidaException 
      */
-    public boolean comprovarParaula(String paraula, String nomJugador) throws PartidaException;
+    public boolean comprovarParaula(String paraula, Usuari nomJugador) throws PartidaException;
+    
+    /**
+     * Mètode que controla el temps d'espera entre partida i partida
+     */
+    public void waitingRoom();
 }

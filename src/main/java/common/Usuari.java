@@ -24,6 +24,18 @@ public class Usuari implements Serializable {
     private String nickname;
     
     private int puntuacio;
+    
+    private boolean jugadorActual;
+
+    public Usuari() {
+    }
+
+    public Usuari(String email, String nickname, int puntuacio, boolean jugadorActual) {
+        this.email = email;
+        this.nickname = nickname;
+        this.puntuacio = puntuacio;
+        this.jugadorActual = jugadorActual;
+    }
 
     public String getEmail() {
         return email;
@@ -47,6 +59,14 @@ public class Usuari implements Serializable {
 
     public void setPuntuacio(int puntuacio) {
         this.puntuacio = puntuacio;
+    }
+
+    public boolean isJugadorActual() {
+        return jugadorActual;
+    }
+
+    public void setJugadorActual(boolean jugadorActual) {
+        this.jugadorActual = jugadorActual;
     }
 
     @Override

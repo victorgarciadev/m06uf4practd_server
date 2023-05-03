@@ -2,10 +2,10 @@ package main;
 
 import common.Partida;
 import common.PartidaException;
+import common.SelectorParaules;
 import java.io.File;
 import java.io.InputStream;
 import java.sql.Timestamp;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Random;
@@ -20,13 +20,9 @@ import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
-import javax.annotation.Resource;
-import javax.ejb.TimerConfig;
-import javax.ejb.TimerService;
-import java.util.Timer;
-import java.util.TimerTask;
-import javax.ejb.Timeout;
+import javax.persistence.TypedQuery;
 
 /**
  *
@@ -53,9 +49,6 @@ public class AppSingletonEJB {
 
     @EJB
     private PartidaEJB partidaEJB;
-
-    @Resource
-    private TimerService timerService;
 
     @PostConstruct //With this annotation, it'll be called by the container upon instantiation of the bean
     public void initialize() {
@@ -105,7 +98,7 @@ public class AppSingletonEJB {
 
     /**
      * *
-     * Mostra un banner amb la versió
+     * Mostra un banner amb la versio
      */
     private void showLogo() {
 
@@ -137,48 +130,31 @@ public class AppSingletonEJB {
     }
 
     @Lock(LockType.WRITE)
-    public void createPartida() throws PartidaException {
-        if (partidaEJB.getPartidaActual() != null) {
+    public Partida createPartida() throws PartidaException {
+        if (getPartidaActual() != null) {
             throw new PartidaException("Ja hi ha una partida en marxa");
         }
+        String[] dificultats = {"Facil", "Mig", "Alta"};
         Partida partida = new Partida();
         partida.setDataPartida(Timestamp.from(Instant.now()));
         partida.setActual(true);
-        partida.setDificultat(dificultatRandom());
-        em.persist(partida);
-
-        timerService.createSingleActionTimer(Duration.ofMinutes(3).toMillis(), new TimerConfig(partida, true));
+        partida.setDificultat(dificultats[new Random().nextInt(dificultats.length)]);
+        partida.setParaules(SelectorParaules.getLlistatParaules(partida.getDificultat()));
+        return partida;
     }
+    
+    @Lock(LockType.READ)
+    public Partida getPartidaActual() {
+        TypedQuery<Partida> query = em.createQuery("SELECT p FROM Partida p where p.actual = true", Partida.class);
+        Partida ret = null;
 
-    @Timeout
-    public void handleTimeout(Timer timer) {
-        int partidaId = partidaEJB.getPartidaActual().getId();
-
-        Partida partida = em.find(Partida.class, partidaId);
-        partida.setActual(false);
-
-        em.merge(partida);
-
-        //crearWaitingRoom();
-    }
-
-    public void crearWaitingRoom() {
-        TimerConfig timerConfig = new TimerConfig();
-        timerService.createSingleActionTimer(Duration.ofMinutes(2).toMillis(), timerConfig);
-    }
-
-    public String dificultatRandom() {
-        Random rand = new Random();
-        int randNum = rand.nextInt(3);
-        switch (randNum) {
-            case 0:
-                return "Facil";
-            case 1:
-                return "Mig";
-            case 2:
-                return "Alta";
-            default:
-                return "Mig";
+        try {
+            Partida p = query.getSingleResult();
+            ret = p;
+        } catch (NoResultException ex) {
+            return null;
         }
+
+        return ret;
     }
 }

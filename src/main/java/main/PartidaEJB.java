@@ -6,6 +6,9 @@ import common.PartidaException;
 import common.PartidaPuntuacio;
 import common.Usuari;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ejb.ConcurrencyManagement;
@@ -39,10 +42,14 @@ public class PartidaEJB implements IPartida {
     @Inject
     private UserTransaction userTransaction;
 
+    @Inject
+    private AppSingletonEJB gameSingleton;
+
     @EJB
     private UsuariEJB usuariEJB;
 
     private static final Logger log = Logger.getLogger(PartidaEJB.class.getName());
+    private final ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
 
     @Override
     @Lock(LockType.WRITE)
@@ -54,7 +61,7 @@ public class PartidaEJB implements IPartida {
 
         Usuari jugador = usuariEJB.getUsuari(nomJugador);
 
-        Partida partida = getPartidaActual();
+        Partida partida = gameSingleton.getPartidaActual();
 
         PartidaPuntuacio puntuacio = em.createQuery(
                 "SELECT pp FROM PartidaPuntuacio pp WHERE pp.usuari = :usuari AND pp.partida = :partida",
@@ -79,33 +86,82 @@ public class PartidaEJB implements IPartida {
     }
 
     @Override
+    @Lock(LockType.WRITE)
     public void novaPartida() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        try {
+            Partida partida = gameSingleton.createPartida();
+            em.persist(partida);
+
+            ses.scheduleWithFixedDelay(new Runnable() {
+                @Override
+                public void run() {
+                    finalitzaPartida();
+                }
+            }, 0, 180, TimeUnit.SECONDS
+            );
+        } catch (PartidaException ex) {
+            // controlar que la partida ja existeix
+        }
     }
 
     @Override
+    @Lock(LockType.WRITE)
     public void finalitzaPartida() {
+        Partida pActual = gameSingleton.getPartidaActual();
+        if (pActual != null) {
+            pActual.setActual(false);
+            em.merge(pActual);
+            waitingRoom();
+        }
+    }
+
+    @Override
+    public List<Usuari> getLlistatJugadors() {
+        Partida p = gameSingleton.getPartidaActual();
+
+        if (p == null) {
+            return null;
+        }
+
+        return p.getUsuaris();
+    }
+
+    @Override
+    @Lock(LockType.WRITE)
+    public void afegirJugador(Usuari nomJugador) {
+        Partida p = gameSingleton.getPartidaActual();
+
+        if (p == null) {
+            // logica per si s'entra a afegirJugador quan no hi ha partida actual
+            return;
+        }
+
+        List<Usuari> listJugador = p.getUsuaris();
+        listJugador.add(nomJugador);
+        p.setUsuaris(listJugador);
+        em.merge(p);
+    }
+
+    @Override
+    public boolean comprovarParaula(String paraula, Usuari nomJugador) {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
-    public List<String> getLlistatJugadors() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
+    public void waitingRoom() {
+        ses.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                List<Usuari> usuaris = usuariEJB.getUsuarisEsperant();
+                if (usuaris.isEmpty()) {
+                    waitingRoom();
+                } else {
+                    novaPartida();
+                }
+            }
+        }, 0, 120, TimeUnit.SECONDS
+        );
 
-    @Override
-    public void afegirJugador(String nomJugador) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    @Override
-    public boolean comprovarParaula(String paraula, String nomJugador) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
-
-    @Override
-    public Partida getPartidaActual() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     private Object persisteixTransaccio(Object ob) throws PartidaException {
