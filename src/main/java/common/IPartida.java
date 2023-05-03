@@ -45,13 +45,14 @@ public interface IPartida {
     public void afegirJugador(Usuari nomJugador) throws PartidaException;
     
     /**
-     * Comprova la paraula enviada de l'usuari
+     * Comprova la paraula enviada de l'usuari lletra per lletra
      * @param paraula
+     * @param posicio
      * @param nomJugador
      * @return 
      * @throws common.PartidaException 
      */
-    public boolean comprovarParaula(String paraula, Usuari nomJugador) throws PartidaException;
+    public String comprovarParaula(String paraula, int ronda, Usuari nomJugador) throws PartidaException;
     
     /**
      * Mètode que controla el temps d'espera entre partida i partida

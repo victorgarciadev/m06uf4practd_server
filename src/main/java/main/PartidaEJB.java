@@ -143,8 +143,25 @@ public class PartidaEJB implements IPartida {
     }
 
     @Override
-    public boolean comprovarParaula(String paraula, Usuari nomJugador) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    public String comprovarParaula(String paraula, int ronda, Usuari nomJugador) {
+        Partida p = gameSingleton.getPartidaActual();
+        List<String> paraules = p.getParaules();
+        String pActual = paraules.get(ronda);
+        String result = "";
+        
+        for (int i = 0; i < pActual.length(); i++) {
+            char targetChar = pActual.charAt(i);
+            char guessChar = paraula.charAt(i);
+            if (targetChar == guessChar) {
+                result += targetChar;
+            } else if (pActual.contains(String.valueOf(guessChar))) {
+                result += "+";
+            } else {
+                result += "-";
+            }
+        }
+        
+        return result;
     }
 
     @Override
