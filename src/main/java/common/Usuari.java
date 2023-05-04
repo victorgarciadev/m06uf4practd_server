@@ -36,6 +36,11 @@ public class Usuari implements Serializable {
         this.puntuacio = puntuacio;
         this.jugadorActual = jugadorActual;
     }
+    
+    public Usuari(String nickname, int puntuacio) {
+        this.nickname = nickname;
+        this.puntuacio = puntuacio;
+    }
 
     public String getEmail() {
         return email;

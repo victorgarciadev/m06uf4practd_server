@@ -55,6 +55,14 @@ public interface IPartida {
     public String comprovarParaula(String paraula, int ronda, Usuari nomJugador) throws PartidaException;
     
     /**
+     * Retorna tots els jugadors d'una partida amb la seva puntuació
+     * @param p
+     * @return
+     * @throws PartidaException 
+     */
+    public List<Usuari> getJugadorsPartidaAmbPuntuacio(Partida p) throws PartidaException;
+    
+    /**
      * Mètode que controla el temps d'espera entre partida i partida
      */
     public void waitingRoom();

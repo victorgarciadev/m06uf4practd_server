@@ -5,6 +5,7 @@ import common.Partida;
 import common.PartidaException;
 import common.PartidaPuntuacio;
 import common.Usuari;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -43,7 +44,7 @@ public class PartidaEJB implements IPartida {
     private UserTransaction userTransaction;
 
     @Inject
-    private AppSingletonEJB gameSingleton;
+    private AppSingleton gameSingleton;
 
     @EJB
     private UsuariEJB usuariEJB;
@@ -75,13 +76,21 @@ public class PartidaEJB implements IPartida {
 
         if (puntuacio != null) {
             puntuacio.setPunts(punts);
-            em.merge(puntuacio); //canviar després perquè passi per persisteixTransaccio
+            try {
+                mergeTransaccio(puntuacio);
+            } catch (PartidaException ex) {
+                Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+            }
         } else {
             PartidaPuntuacio novaPuntuacio = new PartidaPuntuacio();
             novaPuntuacio.setPartida(partida);
             novaPuntuacio.setUsuari(jugador);
             novaPuntuacio.setPunts(punts);
-            em.persist(novaPuntuacio); //canviar després perquè passi per persisteixTransaccio
+            try {
+                persisteixTransaccio(novaPuntuacio);
+            } catch (PartidaException ex) {
+                Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
     }
 
@@ -90,7 +99,11 @@ public class PartidaEJB implements IPartida {
     public void novaPartida() {
         try {
             Partida partida = gameSingleton.createPartida();
-            em.persist(partida);
+            try {
+                persisteixTransaccio(partida);
+            } catch (PartidaException ex) {
+                Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+            }
 
             ses.scheduleWithFixedDelay(new Runnable() {
                 @Override
@@ -110,7 +123,11 @@ public class PartidaEJB implements IPartida {
         Partida pActual = gameSingleton.getPartidaActual();
         if (pActual != null) {
             pActual.setActual(false);
-            em.merge(pActual);
+            try {
+                mergeTransaccio(pActual);
+            } catch (PartidaException ex) {
+                Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+            }
             waitingRoom();
         }
     }
@@ -139,7 +156,11 @@ public class PartidaEJB implements IPartida {
         List<Usuari> listJugador = p.getUsuaris();
         listJugador.add(nomJugador);
         p.setUsuaris(listJugador);
-        em.merge(p);
+        try {
+            mergeTransaccio(p);
+        } catch (PartidaException ex) {
+            Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
@@ -148,7 +169,7 @@ public class PartidaEJB implements IPartida {
         List<String> paraules = p.getParaules();
         String pActual = paraules.get(ronda);
         String result = "";
-        
+
         for (int i = 0; i < pActual.length(); i++) {
             char targetChar = pActual.charAt(i);
             char guessChar = paraula.charAt(i);
@@ -160,8 +181,25 @@ public class PartidaEJB implements IPartida {
                 result += "-";
             }
         }
-        
+
         return result;
+    }
+    
+    @Override
+    @Lock(LockType.READ)
+    public List<Usuari> getJugadorsPartidaAmbPuntuacio(Partida p) throws PartidaException {
+        List<Usuari> ret = new ArrayList();
+        List<PartidaPuntuacio> jugadors = em.createQuery(
+                "SELECT pp FROM PartidaPuntuacio pp WHERE pp.partida = :partida",
+                PartidaPuntuacio.class)
+                .setParameter("partida", p)
+                .getResultList();
+        
+        for (PartidaPuntuacio pp : jugadors) {
+            ret.add(new Usuari(pp.getUsuari().getNickname(), pp.getPunts()));
+        }
+        
+        return ret;
     }
 
     @Override
@@ -181,7 +219,7 @@ public class PartidaEJB implements IPartida {
 
     }
 
-    private Object persisteixTransaccio(Object ob) throws PartidaException {
+    private void persisteixTransaccio(Object ob) throws PartidaException {
         List<String> errors = Validadors.validaBean(ob);
 
         if (errors.isEmpty()) {
@@ -190,8 +228,7 @@ public class PartidaEJB implements IPartida {
                 em.persist(ob);
                 userTransaction.commit();
             } catch (SystemException | HeuristicMixedException | HeuristicRollbackException | SecurityException | IllegalStateException | javax.transaction.NotSupportedException | javax.transaction.RollbackException ex) {
-                String msg = "Error desant: " + errors.toString();
-                log.log(Level.INFO, msg);
+                String msg = "Error desant: " + ex.toString();
                 throw new PartidaException(msg);
             }
         } else {
@@ -201,6 +238,26 @@ public class PartidaEJB implements IPartida {
 
         }
 
-        return ob;
+//        return ob;
+    }
+
+    private void mergeTransaccio(Object ob) throws PartidaException {
+        List<String> errors = Validadors.validaBean(ob);
+
+        if (errors.isEmpty()) {
+            try {
+                userTransaction.begin();
+                em.merge(ob);
+                userTransaction.commit();
+            } catch (SystemException | HeuristicMixedException | HeuristicRollbackException | SecurityException | IllegalStateException | javax.transaction.NotSupportedException | javax.transaction.RollbackException ex) {
+                String msg = "Error desant: " + ex.toString();
+                throw new PartidaException(msg);
+            }
+        } else {
+            String msg = "Errors de validació: " + errors.toString();
+            throw new PartidaException(msg);
+        }
+
+//        return ob;
     }
 }

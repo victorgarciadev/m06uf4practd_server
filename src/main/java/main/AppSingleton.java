@@ -31,12 +31,12 @@ import javax.persistence.TypedQuery;
 @Singleton
 @Startup
 @ConcurrencyManagement(ConcurrencyManagementType.CONTAINER)
-public class AppSingletonEJB {
+public class AppSingleton {
 
     private static final String APP_VERSION = "0.1";
     private static final String DATE_VERSION = "02/05/2023";
 
-    private static final Logger log = Logger.getLogger(AppSingletonEJB.class.getName());
+    private static final Logger log = Logger.getLogger(AppSingleton.class.getName());
 
     // darrera actualitzacio de la BBDD
     private Date lastUpdateDBUTC;
@@ -123,7 +123,7 @@ public class AppSingletonEJB {
 
         banner.append(System.lineSeparator());
         banner.append(System.lineSeparator());
-        banner.append("Versió del servidor: " + AppSingletonEJB.APP_VERSION + " de " + AppSingletonEJB.DATE_VERSION);
+        banner.append("Versió del servidor: " + AppSingleton.APP_VERSION + " de " + AppSingleton.DATE_VERSION);
         banner.append(System.lineSeparator());
 
         log.log(Level.INFO, banner.toString());

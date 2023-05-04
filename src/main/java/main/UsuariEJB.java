@@ -2,6 +2,7 @@ package main;
 
 import common.IUsuari;
 import common.Usuari;
+import common.PartidaPuntuacio;
 import java.util.List;
 import javax.ejb.ConcurrencyManagement;
 import javax.ejb.ConcurrencyManagementType;
@@ -48,8 +49,33 @@ public class UsuariEJB implements IUsuari {
     }
 
     @Override
+    @Lock(LockType.WRITE)
     public void actualitzarPuntuacioUsuari(Usuari usuari, int puntuacio) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        usuari.setPuntuacio(puntuacio);
+        em.merge(usuari);
+    }
+
+    @Override
+    @Lock(LockType.READ)
+    public int getPuntuacioTotalUsuari(Usuari usuari) {
+        int puntuacioTotal = 0;
+        List<PartidaPuntuacio> puntuacions = em.createQuery(
+                "SELECT pp FROM PartidaPuntuacio pp WHERE pp.usuari = :usuari",
+                PartidaPuntuacio.class)
+                .setParameter("usuari", usuari)
+                .getResultList();
+        
+        for (PartidaPuntuacio pp : puntuacions) {
+            puntuacioTotal += pp.getPunts();
+        }
+        
+        return puntuacioTotal;
+    }
+
+    @Override
+    public void setUsuariJugant(Usuari usuari) {
+        usuari.setJugadorActual(true);
+        em.merge(usuari);
     }
     
 }

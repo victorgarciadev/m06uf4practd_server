@@ -36,4 +36,17 @@ public interface IUsuari {
      * @param puntuacio 
      */
     public void actualitzarPuntuacioUsuari(Usuari usuari, int puntuacio);
+    
+    /**
+     * Retorna la puntuació total històrica de l'usuari
+     * @param usuari
+     * @return 
+     */
+    public int getPuntuacioTotalUsuari(Usuari usuari);
+    
+    /**
+     * Mètode que canvia l'estat del jugador a Jugant
+     * @param usuari 
+     */
+    public void setUsuariJugant(Usuari usuari);
 }
