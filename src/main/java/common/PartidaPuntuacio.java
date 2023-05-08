@@ -29,14 +29,17 @@ public class PartidaPuntuacio implements Serializable {
 
     @Column(name = "punts")
     private int punts;
+    
+    private double menorTempsEncert;
 
     public PartidaPuntuacio() {
     }
 
-    public PartidaPuntuacio(Partida partida, Usuari usuari, int punts) {
+    public PartidaPuntuacio(Partida partida, Usuari usuari, int punts, double menorTempsEncert) {
         this.partida = partida;
         this.usuari = usuari;
         this.punts = punts;
+        this.menorTempsEncert = menorTempsEncert;
     }
 
     public Long getId() {
@@ -70,6 +73,13 @@ public class PartidaPuntuacio implements Serializable {
     public void setPunts(int punts) {
         this.punts = punts;
     }
-    
+
+    public double getMenorTempsEncert() {
+        return menorTempsEncert;
+    }
+
+    public void setMenorTempsEncert(double menorTempsEncert) {
+        this.menorTempsEncert = menorTempsEncert;
+    }
     
 }

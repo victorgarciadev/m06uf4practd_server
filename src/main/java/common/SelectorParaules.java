@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Scanner;
+import jdk.internal.org.jline.utils.Log;
 
 /**
  *
@@ -33,7 +34,7 @@ public class SelectorParaules {
                 ret = getRandomWords(4);
             }
         } catch (Exception ex) {
-            // error de connexió API
+            log.info("Error de connexió extern: " + ex.toString());
         }
 
         return ret;
@@ -57,7 +58,6 @@ public class SelectorParaules {
 
         int responseCode = conn.getResponseCode();
         if (responseCode != 200) {
-            System.out.println("Error de connexió a l'API");
             throw new RuntimeException("Error de connexió a l'API: " + responseCode);
         }
 

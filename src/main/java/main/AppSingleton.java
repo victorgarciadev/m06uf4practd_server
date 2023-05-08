@@ -34,7 +34,7 @@ import javax.persistence.TypedQuery;
 public class AppSingleton {
 
     private static final String APP_VERSION = "0.1";
-    private static final String DATE_VERSION = "02/05/2023";
+    private static final String DATE_VERSION = "08/05/2023";
 
     private static final Logger log = Logger.getLogger(AppSingleton.class.getName());
 
@@ -58,7 +58,7 @@ public class AppSingleton {
 
         this.uptimeUTC = new Date();
 
-        log.log(Level.INFO, "Inicialitzant AppSingletonEJB.  lastUpdateDBUTC={0} , uptimeUTC={1}", new Object[]{this.lastUpdateDBUTC, this.uptimeUTC});
+        log.log(Level.INFO, "Inicialitzant AppSingleton.  lastUpdateDBUTC={0} , uptimeUTC={1}", new Object[]{this.lastUpdateDBUTC, this.uptimeUTC});
     }
 
     /**
