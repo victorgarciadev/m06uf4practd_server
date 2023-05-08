@@ -11,7 +11,7 @@ import javax.ejb.Remote;
 public interface IPartida {
     
    /**
-    * Comença una nova partida
+    * ComenÃ§a una nova partida
      * @throws common.PartidaException
     */
     public void novaPartida() throws PartidaException;
@@ -30,7 +30,7 @@ public interface IPartida {
     public List<Usuari> getLlistatJugadors() throws PartidaException;
     
     /**
-     * Actualitza la puntuació d'un jugador a una partida
+     * Actualitza la puntuaciÃ³ d'un jugador a una partida
      * @param nomJugador
      * @param punts 
      * @param ronda 
@@ -57,7 +57,7 @@ public interface IPartida {
     public String comprovarParaula(String paraula, int ronda, Usuari nomJugador) throws PartidaException;
     
     /**
-     * Retorna tots els jugadors d'una partida amb la seva puntuació
+     * Retorna tots els jugadors d'una partida amb la seva puntuaciÃ³
      * @param p
      * @return
      * @throws PartidaException 
@@ -65,7 +65,7 @@ public interface IPartida {
     public List<Usuari> getJugadorsPartidaAmbPuntuacio(Partida p) throws PartidaException;
     
     /**
-     * Mètode que controla el temps d'espera entre partida i partida
+     * Mï¿½tode que controla el temps d'espera entre partida i partida
      */
     public void waitingRoom();
 }

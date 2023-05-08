@@ -18,7 +18,7 @@ public class Lookups {
     static final String appName = "M06UF4PracTD_Server";
     
     /**
-     * Connexió a un EJB amb @remote via local (entre components del mateix servidor) per Partida
+     * ConnexiÃ³ a un EJB amb @remote via local (entre components del mateix servidor) per Partida
      * @return
      * @throws NamingException 
      */
@@ -35,7 +35,7 @@ public class Lookups {
     }
     
     /**
-     * Connexió a un EJB amb @remote via local (entre components del mateix servidor) per Usuari
+     * ConnexiÃ³ a un EJB amb @remote via local (entre components del mateix servidor) per Usuari
      * @return
      * @throws NamingException 
      */
@@ -48,6 +48,18 @@ public class Lookups {
         
         Context context = new InitialContext(jndiProperties);
         
+        return (IUsuari) context.lookup(strlookup);
+    }
+    
+    public static IUsuari usuariEJBLocalLookup() throws NamingException {
+        String strlookup = "java:jboss/exported/" + appName + "/" + UsuariEJB.class.getSimpleName() + "!" + IUsuari.class.getName();
+            
+        Properties jndiProperties = new Properties();
+
+        jndiProperties.put(Context.INITIAL_CONTEXT_FACTORY,  wildFlyInitialContextFactory);
+        
+        Context context = new InitialContext(jndiProperties);
+
         return (IUsuari) context.lookup(strlookup);
     }
 }

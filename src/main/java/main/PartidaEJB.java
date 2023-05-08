@@ -2,6 +2,8 @@ package main;
 
 import com.sun.tools.sjavac.Log;
 import common.IPartida;
+import common.IUsuari;
+import common.Lookups;
 import common.Partida;
 import common.PartidaException;
 import common.PartidaPuntuacio;
@@ -22,6 +24,7 @@ import javax.ejb.Stateful;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
+import javax.naming.NamingException;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.transaction.HeuristicMixedException;
@@ -35,7 +38,7 @@ import javax.transaction.UserTransaction;
  */
 @Stateful
 @ConcurrencyManagement(ConcurrencyManagementType.CONTAINER)
-@TransactionManagement(value = TransactionManagementType.CONTAINER)
+@TransactionManagement(value = TransactionManagementType.BEAN)
 public class PartidaEJB implements IPartida {
     
     @PersistenceContext(unitName = "WordlePersistenceUnit")
@@ -44,11 +47,8 @@ public class PartidaEJB implements IPartida {
     @Inject
     private UserTransaction userTransaction;
     
-    @Inject
-    private AppSingleton gameSingleton;
-    
     @EJB
-    private UsuariEJB usuariEJB;
+    private AppSingleton gameSingleton;
     
     private static final Logger log = Logger.getLogger(PartidaEJB.class.getName());
     private final ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
@@ -57,45 +57,51 @@ public class PartidaEJB implements IPartida {
     @Lock(LockType.WRITE)
     public void actualitzarPuntuacio(String nomJugador, int punts, int ronda, double temps) throws PartidaException {
         
-        if (nomJugador == null || nomJugador.isBlank() || nomJugador.isEmpty()) {
-            throw new PartidaException("Jugador no vàlid");
-        }
-        
-        Usuari jugador = usuariEJB.getUsuari(nomJugador);
-        
-        Partida partida = gameSingleton.getPartidaActual();
-        
-        PartidaPuntuacio puntuacio = em.createQuery(
-                "SELECT pp FROM PartidaPuntuacio pp WHERE pp.usuari = :usuari AND pp.partida = :partida",
-                PartidaPuntuacio.class)
-                .setParameter("usuari", jugador)
-                .setParameter("partida", partida)
-                .getResultList()
-                .stream()
-                .findFirst()
-                .orElse(null);
-        
-        if (puntuacio != null) {
-            puntuacio.setPunts(puntuacio.getPunts() + punts);
-            if (temps < puntuacio.getMenorTempsEncert() && punts > 0) {
-                puntuacio.setMenorTempsEncert(temps);
+        try {
+            IUsuari usuariEJB = Lookups.usuariEJBRemoteLookup();
+            
+            if (nomJugador == null || nomJugador.isBlank() || nomJugador.isEmpty()) {
+                throw new PartidaException("Jugador no vÃ lid");
             }
-            try {
-                mergeTransaccio(puntuacio);
-            } catch (PartidaException ex) {
-                Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+            
+            Usuari jugador = usuariEJB.getUsuari(nomJugador);
+            
+            Partida partida = gameSingleton.getPartidaActual();
+            
+            PartidaPuntuacio puntuacio = em.createQuery(
+                    "SELECT pp FROM PartidaPuntuacio pp WHERE pp.usuari = :usuari AND pp.partida = :partida",
+                    PartidaPuntuacio.class)
+                    .setParameter("usuari", jugador)
+                    .setParameter("partida", partida)
+                    .getResultList()
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+            
+            if (puntuacio != null) {
+                puntuacio.setPunts(puntuacio.getPunts() + punts);
+                if (temps < puntuacio.getMenorTempsEncert() && punts > 0) {
+                    puntuacio.setMenorTempsEncert(temps);
+                }
+                try {
+                    mergeTransaccio(puntuacio);
+                } catch (PartidaException ex) {
+                    Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else {
+                PartidaPuntuacio novaPuntuacio = new PartidaPuntuacio();
+                novaPuntuacio.setPartida(partida);
+                novaPuntuacio.setUsuari(jugador);
+                novaPuntuacio.setPunts(punts);
+                novaPuntuacio.setMenorTempsEncert(temps);
+                try {
+                    persisteixTransaccio(novaPuntuacio);
+                } catch (PartidaException ex) {
+                    Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
-        } else {
-            PartidaPuntuacio novaPuntuacio = new PartidaPuntuacio();
-            novaPuntuacio.setPartida(partida);
-            novaPuntuacio.setUsuari(jugador);
-            novaPuntuacio.setPunts(punts);
-            novaPuntuacio.setMenorTempsEncert(temps);
-            try {
-                persisteixTransaccio(novaPuntuacio);
-            } catch (PartidaException ex) {
-                Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        } catch (NamingException ex) {
+            Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
@@ -205,15 +211,20 @@ public class PartidaEJB implements IPartida {
     
     @Override
     public void waitingRoom() {
-        ses.scheduleWithFixedDelay(() -> {
-            List<Usuari> usuaris = usuariEJB.getUsuarisEsperant();
-            if (usuaris.isEmpty()) {
-                waitingRoom();
-            } else {
-                novaPartida();
-            }
-        }, 0, 120, TimeUnit.SECONDS
-        );
+        try {
+            IUsuari usuariEJB = Lookups.usuariEJBRemoteLookup();
+            ses.scheduleWithFixedDelay(() -> {
+                List<Usuari> usuaris = usuariEJB.getUsuarisEsperant();
+                if (usuaris.isEmpty()) {
+                    waitingRoom();
+                } else {
+                    novaPartida();
+                }
+            }, 0, 120, TimeUnit.SECONDS
+            );
+        } catch (NamingException ex) {
+            Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+        }
         
     }
     
@@ -230,7 +241,7 @@ public class PartidaEJB implements IPartida {
                 throw new PartidaException(msg);
             }
         } else {
-            String msg = "Errors de validació: " + errors.toString();
+            String msg = "Errors de validaciï¿½: " + errors.toString();
             log.log(Level.INFO, msg);
             throw new PartidaException(msg);
             
@@ -252,7 +263,7 @@ public class PartidaEJB implements IPartida {
                 throw new PartidaException(msg);
             }
         } else {
-            String msg = "Errors de validació: " + errors.toString();
+            String msg = "Errors de validaciÃ³: " + errors.toString();
             throw new PartidaException(msg);
         }
 

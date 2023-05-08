@@ -31,21 +31,27 @@ public interface IUsuari {
     public List<Usuari> getUsuaris();
     
     /**
-     * Actualitza la puntuació total de l'usuari
+     * Retorna la llista d'usuaris esperant
+     * @return 
+     */
+    public List<Usuari> getUsuarisEsperant();
+    
+    /**
+     * Actualitza la puntuaciÃ³ total de l'usuari
      * @param usuari
      * @param puntuacio 
      */
     public void actualitzarPuntuacioUsuari(Usuari usuari, int puntuacio);
     
     /**
-     * Retorna la puntuació total històrica de l'usuari
+     * Retorna la puntuaciÃ³ total histÃ²rica de l'usuari
      * @param usuari
      * @return 
      */
     public int getPuntuacioTotalUsuari(Usuari usuari);
     
     /**
-     * Mètode que canvia l'estat del jugador a Jugant
+     * Mï¿½tode que canvia l'estat del jugador a Jugant
      * @param usuari 
      */
     public void setUsuariJugant(Usuari usuari);

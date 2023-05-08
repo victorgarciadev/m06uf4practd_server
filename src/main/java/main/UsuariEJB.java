@@ -9,6 +9,7 @@ import javax.ejb.ConcurrencyManagementType;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Stateful;
+import javax.ejb.Stateless;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.persistence.EntityManager;
@@ -42,6 +43,7 @@ public class UsuariEJB implements IUsuari {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
     
+    @Override
     @Lock(LockType.READ)
     public List<Usuari> getUsuarisEsperant() {
         TypedQuery<Usuari> query = em.createQuery("SELECT u FROM Usuari u WHERE u.jugadorActual = true", Usuari.class);

@@ -34,15 +34,15 @@ public class SelectorParaules {
                 ret = getRandomWords(4);
             }
         } catch (Exception ex) {
-            log.info("Error de connexiÛ extern: " + ex.toString());
+            log.info("Error de connexi√≥ extern: " + ex.toString());
         }
 
         return ret;
     }
 
     /**
-     * MËtode que retorna una llista de 20 paraules amb una quantitat de car‡cters
-     * definida per par‡metre. Funciona a travÈs de l'API Random Word
+     * MÔøΩtode que retorna una llista de 20 paraules amb una quantitat de car√†cters
+     * definida per par√†metre. Funciona a trav√©s de l'API Random Word
      * @param characters
      * @return
      * @throws Exception 
@@ -58,7 +58,7 @@ public class SelectorParaules {
 
         int responseCode = conn.getResponseCode();
         if (responseCode != 200) {
-            throw new RuntimeException("Error de connexiÛ a l'API: " + responseCode);
+            throw new RuntimeException("Error de connexi√≥ a l'API: " + responseCode);
         }
 
         Scanner scanner = new Scanner(url.openStream());

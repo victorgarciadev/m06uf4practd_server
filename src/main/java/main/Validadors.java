@@ -14,7 +14,7 @@ import javax.validation.ValidatorFactory;
 public class Validadors {
     
     /**
-     * Valida un objecte Java Bean mitjançant l'API Bean Validation i retorna una llista d'errors de validació.
+     * Valida un objecte Java Bean mitjanÃ§ant l'API Bean Validation i retorna una llista d'errors de validaciï¿½.
      * @param b l'objecte Java Bean a validar
      * @return llista de missatges d'error
      */

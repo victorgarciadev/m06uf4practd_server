@@ -1,13 +1,15 @@
 package common;
 
 import java.io.Serializable;
-import java.sql.Timestamp;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
@@ -25,10 +27,12 @@ public class Partida implements Serializable {
     private int id;
     
     @Temporal(TemporalType.TIMESTAMP)
-    private Timestamp dataPartida;
+    private Date dataPartida;
     
+    @ElementCollection
     private List<String> paraules;
     
+    @OneToMany
     private List<Usuari> usuaris;
     
     private String dificultat;
@@ -38,7 +42,7 @@ public class Partida implements Serializable {
     public Partida() {
     }
 
-    public Partida(Timestamp dataPartida, List<String> paraules, List<Usuari> usuaris, String dificultat, boolean actual) {
+    public Partida(Date dataPartida, List<String> paraules, List<Usuari> usuaris, String dificultat, boolean actual) {
         this.dataPartida = dataPartida;
         this.paraules = paraules;
         this.usuaris = usuaris;
@@ -54,11 +58,11 @@ public class Partida implements Serializable {
         this.id = id;
     }
 
-    public Timestamp getDataPartida() {
+    public Date getDataPartida() {
         return dataPartida;
     }
 
-    public void setDataPartida(Timestamp dataPartida) {
+    public void setDataPartida(Date dataPartida) {
         this.dataPartida = dataPartida;
     }
 

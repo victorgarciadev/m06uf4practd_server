@@ -46,10 +46,7 @@ public class AppSingleton {
 
     @PersistenceContext(unitName = "WordlePersistenceUnit")
     private EntityManager em;
-
-    @EJB
-    private PartidaEJB partidaEJB;
-
+    
     @PostConstruct //With this annotation, it'll be called by the container upon instantiation of the bean
     public void initialize() {
         this.showLogo();
@@ -63,7 +60,7 @@ public class AppSingleton {
 
     /**
      * *
-     * Obté el timestamp d'inici de l'aplicació
+     * ObtÃ© el timestamp d'inici de l'aplicaciÃ³
      *
      * @return
      */
@@ -75,7 +72,7 @@ public class AppSingleton {
 
     /**
      * *
-     * Obté la darrera data d'actualització de la BBDD
+     * ObtÃ© la darrera data d'actualitzaciÃ³ de la BBDD
      *
      * @return
      */
@@ -87,7 +84,7 @@ public class AppSingleton {
 
     /**
      * *
-     * Estableix la data d'actualització de la BBDD
+     * Estableix la data d'actualitzaciÃ³ de la BBDD
      */
     @Lock(LockType.WRITE)
     public void setLastDBUpdateUTC() {
@@ -123,7 +120,7 @@ public class AppSingleton {
 
         banner.append(System.lineSeparator());
         banner.append(System.lineSeparator());
-        banner.append("Versió del servidor: " + AppSingleton.APP_VERSION + " de " + AppSingleton.DATE_VERSION);
+        banner.append("VersiÃ³ del servidor: " + AppSingleton.APP_VERSION + " de " + AppSingleton.DATE_VERSION);
         banner.append(System.lineSeparator());
 
         log.log(Level.INFO, banner.toString());
@@ -136,7 +133,7 @@ public class AppSingleton {
         }
         String[] dificultats = {"Facil", "Mig", "Alta"};
         Partida partida = new Partida();
-        partida.setDataPartida(Timestamp.from(Instant.now()));
+        partida.setDataPartida(Date.from(Instant.now()));
         partida.setActual(true);
         partida.setDificultat(dificultats[new Random().nextInt(dificultats.length)]);
         partida.setParaules(SelectorParaules.getLlistatParaules(partida.getDificultat()));
