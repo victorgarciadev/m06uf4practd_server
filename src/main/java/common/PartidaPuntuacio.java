@@ -31,15 +31,18 @@ public class PartidaPuntuacio implements Serializable {
     private int punts;
     
     private double menorTempsEncert;
+    
+    private int ronda;
 
     public PartidaPuntuacio() {
     }
 
-    public PartidaPuntuacio(Partida partida, Usuari usuari, int punts, double menorTempsEncert) {
+    public PartidaPuntuacio(Partida partida, Usuari usuari, int punts, double menorTempsEncert, int ronda) {
         this.partida = partida;
         this.usuari = usuari;
         this.punts = punts;
         this.menorTempsEncert = menorTempsEncert;
+        this.ronda = ronda;
     }
 
     public Long getId() {
@@ -80,6 +83,14 @@ public class PartidaPuntuacio implements Serializable {
 
     public void setMenorTempsEncert(double menorTempsEncert) {
         this.menorTempsEncert = menorTempsEncert;
+    }
+
+    public int getRonda() {
+        return ronda;
+    }
+
+    public void setRonda(int ronda) {
+        this.ronda = ronda;
     }
     
 }

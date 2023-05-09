@@ -3,18 +3,18 @@ package main;
 import common.Partida;
 import common.PartidaException;
 import common.SelectorParaules;
+import common.Usuari;
 import java.io.File;
 import java.io.InputStream;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
 import javax.ejb.ConcurrencyManagement;
 import javax.ejb.ConcurrencyManagementType;
-import javax.ejb.EJB;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Singleton;
@@ -127,12 +127,13 @@ public class AppSingleton {
     }
 
     @Lock(LockType.WRITE)
-    public Partida createPartida() throws PartidaException {
+    public Partida createPartida(List<Usuari> usuaris) throws PartidaException {
         if (getPartidaActual() != null) {
             throw new PartidaException("Ja hi ha una partida en marxa");
         }
         String[] dificultats = {"Facil", "Mig", "Alta"};
         Partida partida = new Partida();
+        partida.setUsuaris(usuaris);
         partida.setDataPartida(Date.from(Instant.now()));
         partida.setActual(true);
         partida.setDificultat(dificultats[new Random().nextInt(dificultats.length)]);

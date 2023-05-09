@@ -12,9 +12,10 @@ public interface IPartida {
     
    /**
     * Comença una nova partida
+     * @param usuaris
      * @throws common.PartidaException
     */
-    public void novaPartida() throws PartidaException;
+    public void novaPartida(List<Usuari> usuaris) throws PartidaException;
     
     /**
      * Tanca una partida
@@ -40,16 +41,16 @@ public interface IPartida {
     public void actualitzarPuntuacio(String nomJugador, int punts, int ronda, double temps) throws PartidaException;
     
     /**
-     * Afegeix un jugador a la partida
-     * @param nomJugador 
+     * Afegeix un jugador a la partida 
+     * @return  
      * @throws common.PartidaException 
      */
-    public void afegirJugador(Usuari nomJugador) throws PartidaException;
+    public List<Usuari> afegirJugadors() throws PartidaException;
     
     /**
      * Comprova la paraula enviada de l'usuari lletra per lletra
      * @param paraula
-     * @param posicio
+     * @param ronda
      * @param nomJugador
      * @return 
      * @throws common.PartidaException 

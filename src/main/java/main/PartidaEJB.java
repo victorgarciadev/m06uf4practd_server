@@ -40,34 +40,34 @@ import javax.transaction.UserTransaction;
 @ConcurrencyManagement(ConcurrencyManagementType.CONTAINER)
 @TransactionManagement(value = TransactionManagementType.BEAN)
 public class PartidaEJB implements IPartida {
-    
+
     @PersistenceContext(unitName = "WordlePersistenceUnit")
     private EntityManager em;
-    
+
     @Inject
     private UserTransaction userTransaction;
-    
+
     @EJB
     private AppSingleton gameSingleton;
-    
+
     private static final Logger log = Logger.getLogger(PartidaEJB.class.getName());
     private final ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
-    
+
     @Override
     @Lock(LockType.WRITE)
     public void actualitzarPuntuacio(String nomJugador, int punts, int ronda, double temps) throws PartidaException {
-        
+
         try {
             IUsuari usuariEJB = Lookups.usuariEJBRemoteLookup();
-            
+
             if (nomJugador == null || nomJugador.isBlank() || nomJugador.isEmpty()) {
                 throw new PartidaException("Jugador no vàlid");
             }
-            
+
             Usuari jugador = usuariEJB.getUsuari(nomJugador);
-            
+
             Partida partida = gameSingleton.getPartidaActual();
-            
+
             PartidaPuntuacio puntuacio = em.createQuery(
                     "SELECT pp FROM PartidaPuntuacio pp WHERE pp.usuari = :usuari AND pp.partida = :partida",
                     PartidaPuntuacio.class)
@@ -77,9 +77,10 @@ public class PartidaEJB implements IPartida {
                     .stream()
                     .findFirst()
                     .orElse(null);
-            
+
             if (puntuacio != null) {
                 puntuacio.setPunts(puntuacio.getPunts() + punts);
+                puntuacio.setRonda(ronda);
                 if (temps < puntuacio.getMenorTempsEncert() && punts > 0) {
                     puntuacio.setMenorTempsEncert(temps);
                 }
@@ -94,6 +95,7 @@ public class PartidaEJB implements IPartida {
                 novaPuntuacio.setUsuari(jugador);
                 novaPuntuacio.setPunts(punts);
                 novaPuntuacio.setMenorTempsEncert(temps);
+                novaPuntuacio.setRonda(ronda);
                 try {
                     persisteixTransaccio(novaPuntuacio);
                 } catch (PartidaException ex) {
@@ -104,25 +106,24 @@ public class PartidaEJB implements IPartida {
             Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
     @Override
-    @Lock(LockType.WRITE)
-    public void novaPartida() {
+    public void novaPartida(List<Usuari> usuaris) {
         try {
-            Partida partida = gameSingleton.createPartida();
+            Partida partida = gameSingleton.createPartida(usuaris);
             try {
                 persisteixTransaccio(partida);
             } catch (PartidaException ex) {
                 Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
             }
-            
+
             ses.scheduleWithFixedDelay(this::finalitzaPartida, 0, 180, TimeUnit.SECONDS
             );
         } catch (PartidaException ex) {
             Log.info("La partida ja existeix: " + ex.toString());
         }
     }
-    
+
     @Override
     @Lock(LockType.WRITE)
     public void finalitzaPartida() {
@@ -137,46 +138,46 @@ public class PartidaEJB implements IPartida {
             waitingRoom();
         }
     }
-    
+
     @Override
     public List<Usuari> getLlistatJugadors() {
         Partida p = gameSingleton.getPartidaActual();
-        
+
         if (p == null) {
             log.info("No hi ha cap partida en marxa");
             return null;
         }
-        
+
         return p.getUsuaris();
     }
-    
+
     @Override
     @Lock(LockType.WRITE)
-    public void afegirJugador(Usuari nomJugador) {
-        Partida p = gameSingleton.getPartidaActual();
-        
-        if (p == null) {
-            log.info("No hi ha cap partida en marxa.");
-            return;
-        }
-        
-        List<Usuari> listJugador = p.getUsuaris();
-        listJugador.add(nomJugador);
-        p.setUsuaris(listJugador);
+    public List<Usuari> afegirJugadors() {
+        List<Usuari> jugadors = new ArrayList<>();
         try {
-            mergeTransaccio(p);
-        } catch (PartidaException ex) {
+            IUsuari usuariEJB = Lookups.usuariEJBRemoteLookup();
+            jugadors = usuariEJB.getUsuarisEsperant();
+
+            if (jugadors.isEmpty()) {
+                log.info("No hi ha cap jugador esperant.");
+                return null;
+            }
+
+            return jugadors;
+        } catch (NamingException ex) {
             Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
         }
+        return null;
     }
-    
+
     @Override
     public String comprovarParaula(String paraula, int ronda, Usuari nomJugador) {
         Partida p = gameSingleton.getPartidaActual();
         List<String> paraules = p.getParaules();
         String pActual = paraules.get(ronda);
         String result = "";
-        
+
         for (int i = 0; i < pActual.length(); i++) {
             char targetChar = pActual.charAt(i);
             char guessChar = paraula.charAt(i);
@@ -188,10 +189,10 @@ public class PartidaEJB implements IPartida {
                 result += "-";
             }
         }
-        
+
         return result;
     }
-    
+
     @Override
     @Lock(LockType.READ)
     public List<Usuari> getJugadorsPartidaAmbPuntuacio(Partida p) throws PartidaException {
@@ -201,36 +202,31 @@ public class PartidaEJB implements IPartida {
                 PartidaPuntuacio.class)
                 .setParameter("partida", p)
                 .getResultList();
-        
+
         for (PartidaPuntuacio pp : jugadors) {
             ret.add(new Usuari(pp.getUsuari().getNickname(), pp.getPunts()));
         }
-        
+
         return ret;
     }
-    
+
     @Override
     public void waitingRoom() {
-        try {
-            IUsuari usuariEJB = Lookups.usuariEJBRemoteLookup();
-            ses.scheduleWithFixedDelay(() -> {
-                List<Usuari> usuaris = usuariEJB.getUsuarisEsperant();
-                if (usuaris.isEmpty()) {
-                    waitingRoom();
-                } else {
-                    novaPartida();
-                }
-            }, 0, 120, TimeUnit.SECONDS
-            );
-        } catch (NamingException ex) {
-            Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
+        ses.scheduleWithFixedDelay(() -> {
+            List<Usuari> usuaris = afegirJugadors();
+            if (usuaris.isEmpty()) {
+                waitingRoom();
+            } else {
+                novaPartida(usuaris);
+            }
+        }, 0, 120, TimeUnit.SECONDS
+        );
+
     }
-    
+
     private void persisteixTransaccio(Object ob) throws PartidaException {
         List<String> errors = Validadors.validaBean(ob);
-        
+
         if (errors.isEmpty()) {
             try {
                 userTransaction.begin();
@@ -244,15 +240,15 @@ public class PartidaEJB implements IPartida {
             String msg = "Errors de validaci�: " + errors.toString();
             log.log(Level.INFO, msg);
             throw new PartidaException(msg);
-            
+
         }
 
 //        return ob;
     }
-    
+
     private void mergeTransaccio(Object ob) throws PartidaException {
         List<String> errors = Validadors.validaBean(ob);
-        
+
         if (errors.isEmpty()) {
             try {
                 userTransaction.begin();
