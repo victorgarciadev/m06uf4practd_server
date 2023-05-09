@@ -34,13 +34,21 @@ public class UsuariEJB implements IUsuari {
     }
 
     @Override
+    @Lock(LockType.READ)
     public Usuari getUsuari(String email) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        TypedQuery<Usuari> query = em.createQuery("SELECT u FROM Usuari u where u.email = :email", Usuari.class).setParameter("email", email);
+        
+        Usuari user = query.getSingleResult();
+        return user;
     }
 
     @Override
+    @Lock(LockType.READ)
     public List<Usuari> getUsuaris() {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        TypedQuery<Usuari> query = em.createQuery("SELECT u FROM Usuari u", Usuari.class);
+        List<Usuari> usuaris = query.getResultList();
+        
+        return usuaris;
     }
     
     @Override
