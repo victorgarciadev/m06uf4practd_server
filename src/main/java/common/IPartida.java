@@ -13,15 +13,13 @@ public interface IPartida {
    /**
     * Comença una nova partida
      * @param usuaris
-     * @throws common.PartidaException
     */
-    public void novaPartida(List<Usuari> usuaris) throws PartidaException;
+    public void novaPartida(List<Usuari> usuaris);
     
     /**
      * Tanca una partida
-     * @throws common.PartidaException
      */
-    public void finalitzaPartida() throws PartidaException;
+    public void finalitzaPartida();
     
     /**
      * Llista dels jugadors d'una partida
@@ -69,4 +67,10 @@ public interface IPartida {
      * M�tode que controla el temps d'espera entre partida i partida
      */
     public void waitingRoom();
+    
+    /**
+     * Mètode que retorna el temps que falta pel canvi de pantalla entre el joc i la sala d'espera
+     * @return 
+     */
+    public Long timeRemaining();
 }

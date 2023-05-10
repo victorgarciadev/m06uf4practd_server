@@ -12,9 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.PostConstruct;
 import javax.ejb.ConcurrencyManagement;
 import javax.ejb.ConcurrencyManagementType;
 import javax.ejb.EJB;
@@ -52,9 +54,14 @@ public class PartidaEJB implements IPartida {
 
     private static final Logger log = Logger.getLogger(PartidaEJB.class.getName());
     private final ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledFuture<?> waitingTime;
+
+    @PostConstruct
+    public void onStartup() {
+        waitingRoom();
+    }
 
     @Override
-    @Lock(LockType.WRITE)
     public void actualitzarPuntuacio(String nomJugador, int punts, int ronda, double temps) throws PartidaException {
 
         try {
@@ -87,7 +94,7 @@ public class PartidaEJB implements IPartida {
                 try {
                     mergeTransaccio(puntuacio);
                 } catch (PartidaException ex) {
-                    Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+                    throw new PartidaException("Error de persistència a la base de dades: " + ex.toString());
                 }
             } else {
                 PartidaPuntuacio novaPuntuacio = new PartidaPuntuacio();
@@ -99,11 +106,11 @@ public class PartidaEJB implements IPartida {
                 try {
                     persisteixTransaccio(novaPuntuacio);
                 } catch (PartidaException ex) {
-                    Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+                    throw new PartidaException("Error de persistència a la base de dades: " + ex.toString());
                 }
             }
         } catch (NamingException ex) {
-            Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+            throw new PartidaException("Error de beans intern: " + ex.toString());
         }
     }
 
@@ -117,7 +124,7 @@ public class PartidaEJB implements IPartida {
                 Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
             }
 
-            ses.scheduleWithFixedDelay(this::finalitzaPartida, 0, 180, TimeUnit.SECONDS
+            waitingTime = ses.scheduleWithFixedDelay(this::finalitzaPartida, 0, 180, TimeUnit.SECONDS
             );
         } catch (PartidaException ex) {
             Log.info("La partida ja existeix: " + ex.toString());
@@ -152,8 +159,7 @@ public class PartidaEJB implements IPartida {
     }
 
     @Override
-    @Lock(LockType.WRITE)
-    public List<Usuari> afegirJugadors() {
+    public List<Usuari> afegirJugadors() throws PartidaException {
         List<Usuari> jugadors = new ArrayList<>();
         try {
             IUsuari usuariEJB = Lookups.usuariEJBRemoteLookup();
@@ -166,9 +172,8 @@ public class PartidaEJB implements IPartida {
 
             return jugadors;
         } catch (NamingException ex) {
-            Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+            throw new PartidaException("Error de beans intern: " + ex.toString());
         }
-        return null;
     }
 
     @Override
@@ -194,7 +199,6 @@ public class PartidaEJB implements IPartida {
     }
 
     @Override
-    @Lock(LockType.READ)
     public List<Usuari> getJugadorsPartidaAmbPuntuacio(Partida p) throws PartidaException {
         List<Usuari> ret = new ArrayList();
         List<PartidaPuntuacio> jugadors = em.createQuery(
@@ -211,9 +215,15 @@ public class PartidaEJB implements IPartida {
     }
 
     @Override
+    @Lock(LockType.WRITE)
     public void waitingRoom() {
-        ses.scheduleWithFixedDelay(() -> {
-            List<Usuari> usuaris = afegirJugadors();
+        waitingTime = ses.scheduleWithFixedDelay(() -> {
+            List<Usuari> usuaris = new ArrayList();
+            try {
+                usuaris = afegirJugadors();
+            } catch (PartidaException ex) {
+                Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+            }
             if (usuaris.isEmpty()) {
                 waitingRoom();
             } else {
@@ -221,7 +231,15 @@ public class PartidaEJB implements IPartida {
             }
         }, 0, 120, TimeUnit.SECONDS
         );
+    }
 
+    @Override
+    public Long timeRemaining() {
+        if (waitingTime != null) {
+            return TimeUnit.MILLISECONDS.toSeconds(waitingTime.getDelay(TimeUnit.MILLISECONDS));
+        } else {
+            return 0L;
+        }
     }
 
     private void persisteixTransaccio(Object ob) throws PartidaException {

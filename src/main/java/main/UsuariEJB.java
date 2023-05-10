@@ -9,12 +9,11 @@ import javax.ejb.ConcurrencyManagementType;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Stateful;
-import javax.ejb.Stateless;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
-import javax.persistence.TypedQuery;
 
 /**
  *
@@ -22,9 +21,9 @@ import javax.persistence.TypedQuery;
  */
 @Stateful
 @ConcurrencyManagement(ConcurrencyManagementType.CONTAINER)
-@TransactionManagement(value=TransactionManagementType.BEAN)
+@TransactionManagement(value = TransactionManagementType.BEAN)
 public class UsuariEJB implements IUsuari {
-    
+
     @PersistenceContext(unitName = "WordlePersistenceUnit")
     private EntityManager em;
 
@@ -34,39 +33,34 @@ public class UsuariEJB implements IUsuari {
     }
 
     @Override
-    @Lock(LockType.READ)
     public Usuari getUsuari(String email) {
-        TypedQuery<Usuari> query = em.createQuery("SELECT u FROM Usuari u where u.email = :email", Usuari.class).setParameter("email", email);
-        
-        Usuari user = query.getSingleResult();
-        return user;
+        try {
+            Usuari user = em.createQuery("SELECT u FROM Usuari u where u.email = :email", Usuari.class).setParameter("email", email).getSingleResult();
+            return user;
+        } catch (NoResultException ex) {
+            return null;
+        }
     }
 
     @Override
-    @Lock(LockType.READ)
     public List<Usuari> getUsuaris() {
-        TypedQuery<Usuari> query = em.createQuery("SELECT u FROM Usuari u", Usuari.class);
-        List<Usuari> usuaris = query.getResultList();
-        
+        List<Usuari> usuaris = em.createQuery("SELECT u FROM Usuari u", Usuari.class).getResultList();
         return usuaris;
     }
-    
+
     @Override
-    @Lock(LockType.READ)
     public List<Usuari> getUsuarisEsperant() {
-        TypedQuery<Usuari> query = em.createQuery("SELECT u FROM Usuari u WHERE u.jugadorActual = true", Usuari.class);
-        return query.getResultList();
+        List<Usuari> usuaris = em.createQuery("SELECT u FROM Usuari u WHERE u.jugadorActual = true", Usuari.class).getResultList();
+        return usuaris;
     }
 
     @Override
-    @Lock(LockType.WRITE)
     public void actualitzarPuntuacioUsuari(Usuari usuari, int puntuacio) {
         usuari.setPuntuacio(puntuacio);
         em.merge(usuari);
     }
 
     @Override
-    @Lock(LockType.READ)
     public int getPuntuacioTotalUsuari(Usuari usuari) {
         int puntuacioTotal = 0;
         List<PartidaPuntuacio> puntuacions = em.createQuery(
@@ -74,11 +68,11 @@ public class UsuariEJB implements IUsuari {
                 PartidaPuntuacio.class)
                 .setParameter("usuari", usuari)
                 .getResultList();
-        
+
         for (PartidaPuntuacio pp : puntuacions) {
             puntuacioTotal += pp.getPunts();
         }
-        
+
         return puntuacioTotal;
     }
 
@@ -87,5 +81,5 @@ public class UsuariEJB implements IUsuari {
         usuari.setJugadorActual(true);
         em.merge(usuari);
     }
-    
+
 }
