@@ -31,12 +31,12 @@ public interface IPartida {
     /**
      * Actualitza la puntuació d'un jugador a una partida
      * @param nomJugador
-     * @param punts 
+     * @param resultat
      * @param ronda 
      * @param temps 
      * @throws common.PartidaException 
      */
-    public void actualitzarPuntuacio(String nomJugador, int punts, int ronda, double temps) throws PartidaException;
+    public void actualitzarPuntuacio(String nomJugador, String resultat, int ronda, double temps) throws PartidaException;
     
     /**
      * Afegeix un jugador a la partida 
@@ -59,9 +59,8 @@ public interface IPartida {
      * Retorna tots els jugadors d'una partida amb la seva puntuació
      * @param p
      * @return
-     * @throws PartidaException 
      */
-    public List<Usuari> getJugadorsPartidaAmbPuntuacio(Partida p) throws PartidaException;
+    public List<Usuari> getJugadorsPartidaAmbPuntuacio(Partida p);
     
     /**
      * M�tode que controla el temps d'espera entre partida i partida

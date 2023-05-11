@@ -4,6 +4,8 @@ import common.IUsuari;
 import common.Usuari;
 import common.PartidaPuntuacio;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.ejb.ConcurrencyManagement;
 import javax.ejb.ConcurrencyManagementType;
 import javax.ejb.Lock;
@@ -26,6 +28,8 @@ public class UsuariEJB implements IUsuari {
 
     @PersistenceContext(unitName = "WordlePersistenceUnit")
     private EntityManager em;
+    
+    private static final Logger log = Logger.getLogger(UsuariEJB.class.getName());
 
     @Override
     public void crearUsuari(String email, String nickname) {
@@ -56,6 +60,7 @@ public class UsuariEJB implements IUsuari {
 
     @Override
     public void actualitzarPuntuacioUsuari(Usuari usuari, int puntuacio) {
+        log.log(Level.INFO, "Actualizant puntuaci\u00f3 de l'' usuari {0}...", usuari.getNickname());
         usuari.setPuntuacio(puntuacio);
         em.merge(usuari);
     }
@@ -78,6 +83,7 @@ public class UsuariEJB implements IUsuari {
 
     @Override
     public void setUsuariJugant(Usuari usuari) {
+        log.log(Level.INFO, "Canviant estat de l''usuari {0} a jugant.", usuari.getNickname());
         usuari.setJugadorActual(true);
         em.merge(usuari);
     }

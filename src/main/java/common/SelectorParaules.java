@@ -2,11 +2,11 @@ package common;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Scanner;
-import jdk.internal.org.jline.utils.Log;
 
 /**
  *
@@ -34,7 +34,7 @@ public class SelectorParaules {
                 ret = getRandomWords(4);
             }
         } catch (Exception ex) {
-            log.info("Error de connexió extern: " + ex.toString());
+            log.log(Level.WARNING, "Error de connexi\u00f3 extern a l''API: {0}", ex.toString());
         }
 
         return ret;
@@ -58,7 +58,7 @@ public class SelectorParaules {
 
         int responseCode = conn.getResponseCode();
         if (responseCode != 200) {
-            throw new RuntimeException("Error de connexió a l'API: " + responseCode);
+            throw new RuntimeException("Codi d'error de connexió a l'API: " + responseCode);
         }
 
         Scanner scanner = new Scanner(url.openStream());
@@ -67,6 +67,7 @@ public class SelectorParaules {
             words.add(word);
         }
         scanner.close();
+        log.log(Level.INFO, "Seleccionades correctament 20 paraules per la nova partida: \n{0}", words);
 
         return words;
     }

@@ -33,8 +33,8 @@ import javax.persistence.TypedQuery;
 @ConcurrencyManagement(ConcurrencyManagementType.CONTAINER)
 public class AppSingleton {
 
-    private static final String APP_VERSION = "0.1";
-    private static final String DATE_VERSION = "08/05/2023";
+    private static final String APP_VERSION = "1.0";
+    private static final String DATE_VERSION = "11/05/2023";
 
     private static final Logger log = Logger.getLogger(AppSingleton.class.getName());
 
@@ -138,6 +138,7 @@ public class AppSingleton {
         partida.setActual(true);
         partida.setDificultat(dificultats[new Random().nextInt(dificultats.length)]);
         partida.setParaules(SelectorParaules.getLlistatParaules(partida.getDificultat()));
+        log.log(Level.INFO, "Creada nova partida amb dificultat {0} i amb data de {1}", new Object[]{partida.getDificultat(), partida.getDataPartida()});
         return partida;
     }
     
@@ -150,6 +151,7 @@ public class AppSingleton {
             Partida p = query.getSingleResult();
             ret = p;
         } catch (NoResultException ex) {
+            log.log(Level.INFO, "getPartidaActual() --> no hi ha cap partida en marxa");
             return null;
         }
 
