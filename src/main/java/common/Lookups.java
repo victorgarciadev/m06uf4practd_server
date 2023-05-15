@@ -15,7 +15,7 @@ public class Lookups {
     
     static final String wildFlyInitialContextFactory = "org.wildfly.naming.client.WildFlyInitialContextFactory";
     
-    static final String appName = "Worlde_Server";
+    static final String appName = "Wordle_Server";
     
     /**
      * Connexió a un EJB amb @remote via local (entre components del mateix servidor) per Partida
