@@ -13,9 +13,11 @@ import main.UsuariEJB;
  */
 public class Lookups {
     
+    static final String APP_VERSION = "1.0.0";
+    
     static final String wildFlyInitialContextFactory = "org.wildfly.naming.client.WildFlyInitialContextFactory";
     
-    static final String appName = "Wordle_Server";
+    static final String appName = "Wordle_Server-" + APP_VERSION;
     
     /**
      * Connexió a un EJB amb @remote via local (entre components del mateix servidor) per Partida
@@ -40,7 +42,7 @@ public class Lookups {
      * @throws NamingException 
      */
     public static IUsuari usuariEJBRemoteLookup() throws NamingException {
-        String strlookup = "ejb:/" + appName + "/" + UsuariEJB.class.getSimpleName() + "!" + IUsuari.class.getSimpleName() + "?stateful";
+        String strlookup = "ejb:/" + appName + "/" + UsuariEJB.class.getSimpleName() + "!common." + IUsuari.class.getSimpleName() + "?stateful";
         
         Properties jndiProperties = new Properties();
         

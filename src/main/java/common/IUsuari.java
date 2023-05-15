@@ -27,14 +27,16 @@ public interface IUsuari {
     /**
      * Retorna una llista amb tots els usuaris
      * @return 
+     * @throws common.PartidaException 
      */
-    public List<Usuari> getUsuaris();
+    public List<Usuari> getUsuaris() throws PartidaException;
     
     /**
      * Retorna la llista d'usuaris esperant
      * @return 
+     * @throws common.PartidaException 
      */
-    public List<Usuari> getUsuarisEsperant();
+    public List<Usuari> getUsuarisEsperant() throws PartidaException;
     
     /**
      * Actualitza la puntuació total de l'usuari

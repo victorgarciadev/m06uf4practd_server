@@ -5,6 +5,8 @@
     <class>common.Partida</class>
     <class>common.Usuari</class>
     <class>common.PartidaPuntuacio</class>
+    <class>common.IPartida</class>
+    <class>common.IUsuari</class>
     <properties>
       <!-- Propietats Hibernate -->
       <property name="hibernate.hbm2ddl.auto" value="update"/>

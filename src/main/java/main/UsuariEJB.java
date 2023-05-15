@@ -1,13 +1,16 @@
 package main;
 
 import common.IUsuari;
+import common.PartidaException;
 import common.Usuari;
 import common.PartidaPuntuacio;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.ejb.ConcurrencyManagement;
 import javax.ejb.ConcurrencyManagementType;
+import javax.ejb.EJB;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Stateful;
@@ -28,7 +31,7 @@ public class UsuariEJB implements IUsuari {
 
     @PersistenceContext(unitName = "WordlePersistenceUnit")
     private EntityManager em;
-    
+
     private static final Logger log = Logger.getLogger(UsuariEJB.class.getName());
 
     @Override
@@ -47,14 +50,25 @@ public class UsuariEJB implements IUsuari {
     }
 
     @Override
-    public List<Usuari> getUsuaris() {
-        List<Usuari> usuaris = em.createQuery("SELECT u FROM Usuari u", Usuari.class).getResultList();
+    public List<Usuari> getUsuaris() throws PartidaException {
+        List<Usuari> usuaris = new ArrayList<>();
+        try {
+            usuaris = em.createQuery("SELECT u FROM Usuari u", Usuari.class).getResultList();
+
+        } catch (Exception ex) {
+            throw new PartidaException(ex.toString());
+        }
         return usuaris;
     }
 
     @Override
-    public List<Usuari> getUsuarisEsperant() {
-        List<Usuari> usuaris = em.createQuery("SELECT u FROM Usuari u WHERE u.jugadorActual = true", Usuari.class).getResultList();
+    public List<Usuari> getUsuarisEsperant() throws PartidaException {
+        List<Usuari> usuaris = new ArrayList<>();
+        try {
+            usuaris = em.createQuery("SELECT u FROM Usuari u WHERE u.jugadorActual = true", Usuari.class).getResultList();
+        } catch (Exception ex) {
+            throw new PartidaException(ex.toString());
+        }
         return usuaris;
     }
 
