@@ -25,7 +25,7 @@ public class Lookups {
      * @throws NamingException 
      */
     public static IPartida partidaEJBRemoteLookup() throws NamingException {
-        String strlookup = "ejb:/" + appName + "/" + PartidaEJB.class.getSimpleName() + "!" + IPartida.class.getSimpleName()+ "?stateful";
+        String strlookup = "ejb:/" + appName + "/" + PartidaEJB.class.getSimpleName() + "!common." + IPartida.class.getSimpleName()+ "?stateful";
         
         Properties jndiProperties = new Properties();
         

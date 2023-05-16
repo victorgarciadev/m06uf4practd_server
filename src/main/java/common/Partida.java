@@ -37,12 +37,12 @@ public class Partida implements Serializable {
     
     private String dificultat;
     
-    private boolean actual;
+    private int actual;
 
     public Partida() {
     }
 
-    public Partida(Date dataPartida, List<String> paraules, List<Usuari> usuaris, String dificultat, boolean actual) {
+    public Partida(Date dataPartida, List<String> paraules, List<Usuari> usuaris, String dificultat, int actual) {
         this.dataPartida = dataPartida;
         this.paraules = paraules;
         this.usuaris = usuaris;
@@ -90,23 +90,23 @@ public class Partida implements Serializable {
         this.dificultat = dificultat;
     }
 
-    public boolean isActual() {
+    public int isActual() {
         return actual;
     }
 
-    public void setActual(boolean actual) {
+    public void setActual(int actual) {
         this.actual = actual;
     }
 
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 79 * hash + this.id;
-        hash = 79 * hash + Objects.hashCode(this.dataPartida);
-        hash = 79 * hash + Objects.hashCode(this.paraules);
-        hash = 79 * hash + Objects.hashCode(this.usuaris);
-        hash = 79 * hash + Objects.hashCode(this.dificultat);
-        hash = 79 * hash + (this.actual ? 1 : 0);
+        hash = 89 * hash + this.id;
+        hash = 89 * hash + Objects.hashCode(this.dataPartida);
+        hash = 89 * hash + Objects.hashCode(this.paraules);
+        hash = 89 * hash + Objects.hashCode(this.usuaris);
+        hash = 89 * hash + Objects.hashCode(this.dificultat);
+        hash = 89 * hash + this.actual;
         return hash;
     }
 

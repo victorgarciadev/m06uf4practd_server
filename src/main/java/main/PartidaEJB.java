@@ -1,14 +1,17 @@
 package main;
 
-import com.sun.tools.sjavac.Log;
 import common.IPartida;
 import common.IUsuari;
 import common.Lookups;
 import common.Partida;
 import common.PartidaException;
 import common.PartidaPuntuacio;
+import common.SalaEspera;
 import common.Usuari;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,6 +31,7 @@ import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
 import javax.naming.NamingException;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
@@ -55,11 +59,36 @@ public class PartidaEJB implements IPartida {
     private static final Logger log = Logger.getLogger(PartidaEJB.class.getName());
     private final ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
     private ScheduledFuture<?> waitingTime;
+    private SalaEspera se;
 
     @PostConstruct
     public void onStartup() {
-        log.log(Level.INFO, "Inicialitzant programa... iniciant sala d'espera");
-        waitingRoom();
+        checkPartida();
+    }
+
+    public void checkPartida() {
+        if (gameSingleton.getPartidaActual() == null) {
+            log.log(Level.INFO, "Inicialitzant programa... iniciant sala d'espera");
+            try {
+                se = em.createQuery("SELECT se FROM SalaEspera se", SalaEspera.class).getSingleResult();
+                waitingRoom();
+            } catch (NoResultException ex) {
+                Date dateComenca = new Date();
+                dateComenca.setMinutes(dateComenca.getMinutes() + 2);
+                se = new SalaEspera(dateComenca);
+                try {
+                    persisteixTransaccio(se);
+                    novaPartida();
+                } catch (PartidaException e) {
+                    log.log(Level.SEVERE, "Error de persist\u00e8ncia a la base de dades: {0}", e.toString());
+                }
+            }
+        } else {
+            Partida p = gameSingleton.getPartidaActual();
+            Date newDate = p.getDataPartida();
+            newDate.setMinutes(newDate.getMinutes() + 5);
+            se = new SalaEspera(newDate);
+        }
     }
 
     @Override
@@ -68,7 +97,7 @@ public class PartidaEJB implements IPartida {
         try {
             int punts = calcularPuntsRonda(resultat, ronda);
             IUsuari usuariEJB = Lookups.usuariEJBRemoteLookup();
-            
+
             if (nomJugador == null || nomJugador.isBlank() || nomJugador.isEmpty()) {
                 log.log(Level.WARNING, "actualitzarPuntuacio() --> Nom del jugador no vàlid");
                 throw new PartidaException("Jugador no vàlid");
@@ -122,9 +151,9 @@ public class PartidaEJB implements IPartida {
     }
 
     @Override
-    public void novaPartida(List<Usuari> usuaris) {
+    public void novaPartida() {
         try {
-            Partida partida = gameSingleton.createPartida(usuaris);
+            Partida partida = gameSingleton.createPartida();
             try {
                 persisteixTransaccio(partida);
                 log.log(Level.INFO, "Nova partida comen\u00e7ada correctament amb ID: {0}", partida.getId());
@@ -132,8 +161,8 @@ public class PartidaEJB implements IPartida {
                 log.log(Level.SEVERE, "Error al crear nova partida: {0}", ex.toString());
             }
 
-            waitingTime = ses.scheduleWithFixedDelay(this::finalitzaPartida, 0, 180, TimeUnit.SECONDS
-            );
+            //waitingTime = ses.scheduleWithFixedDelay(this::finalitzaPartida, 180, 180, TimeUnit.SECONDS
+//            );
         } catch (PartidaException ex) {
             log.log(Level.WARNING, "Ja hi ha en marxa una partida: {0}", ex.toString());
         }
@@ -144,7 +173,7 @@ public class PartidaEJB implements IPartida {
     public void finalitzaPartida() {
         Partida pActual = gameSingleton.getPartidaActual();
         if (pActual != null) {
-            pActual.setActual(false);
+            pActual.setActual(0);
             try {
                 mergeTransaccio(pActual);
                 log.log(Level.INFO, "Nova partida finalitzada correctament amb ID: {0}", pActual.getId());
@@ -168,22 +197,21 @@ public class PartidaEJB implements IPartida {
     }
 
     @Override
-    public List<Usuari> afegirJugadors() throws PartidaException {
-        List<Usuari> jugadors = new ArrayList<>();
-        try {
-            IUsuari usuariEJB = Lookups.usuariEJBRemoteLookup();
-            jugadors = usuariEJB.getUsuarisEsperant();
+    public void afegirJugador() throws PartidaException {
+        Usuari jugador = new Usuari();
+//        try {
+        //IUsuari usuariEJB = Lookups.usuariEJBRemoteLookup();
 
-            if (jugadors.isEmpty()) {
-                log.log(Level.INFO, "afegirJugadors() --> no hi ha cap jugador esperant");
-                return null;
-            }
-
-            return jugadors;
-        } catch (NamingException ex) {
-            log.log(Level.WARNING, "Error intern d'EJB: {0}", ex.toString());
-            throw new PartidaException("Error de beans intern: " + ex.toString());
-        }
+        jugador = new Usuari("asd", "asdasd", 0, true);
+        Partida partida = gameSingleton.getPartidaActual();
+        List<Usuari> usuaris = partida.getUsuaris();
+        usuaris.add(jugador);
+        partida.setUsuaris(usuaris);
+        mergeTransaccio(partida);
+//        } catch (NamingException ex) {
+//            log.log(Level.WARNING, "Error intern d'EJB: {0}", ex.toString());
+//            throw new PartidaException("Error de beans intern: " + ex.toString());
+//        }
     }
 
     @Override
@@ -235,30 +263,33 @@ public class PartidaEJB implements IPartida {
     @Override
     @Lock(LockType.WRITE)
     public void waitingRoom() {
-        waitingTime = ses.scheduleWithFixedDelay(() -> {
-            List<Usuari> usuaris = new ArrayList();
-            try {
-                usuaris = afegirJugadors();
-            } catch (PartidaException ex) {
-                log.log(Level.SEVERE, "Error intern d'EJB: {0}", ex.toString());
-            }
-            if (usuaris.isEmpty()) {
-                log.log(Level.INFO, "waitingRoom() --> la sala està buida, esperant més jugadors...");
-                waitingRoom();
-            } else {
-                log.log(Level.INFO, "waitingRoom() --> creant nova partida amb {0} jugadors.", usuaris.size());
-                novaPartida(usuaris);
-            }
-        }, 0, 120, TimeUnit.SECONDS
-        );
+        int timeRemaining = timeRemaining();
+        try {
+            afegirJugador();
+        } catch (PartidaException ex) {
+            Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        do {
+            timeRemaining = timeRemaining();
+            log.log(Level.INFO, "esperant per començar la partida ... " + timeRemaining);
+        } while (timeRemaining < 0);
     }
 
     @Override
-    public Long timeRemaining() {
-        if (waitingTime != null) {
-            return TimeUnit.MILLISECONDS.toSeconds(waitingTime.getDelay(TimeUnit.MILLISECONDS));
+    public int timeRemaining() {
+        if (se != null) {
+            Date horaComenca = se.getHoraComenca();
+            log.log(Level.INFO, ">>>> Hora comença " + horaComenca);
+            Date actualDate = new Date();
+            log.log(Level.INFO, ">>> hora actual " + actualDate);
+
+            Instant startDate = horaComenca.toInstant();
+            Instant endDate = actualDate.toInstant();
+            Duration duration = Duration.between(endDate, startDate);
+            log.log(Level.INFO, ">>> diferencia " + duration.getSeconds());
+            return (int) duration.getSeconds();
         } else {
-            return 0L;
+            return 0;
         }
     }
 
