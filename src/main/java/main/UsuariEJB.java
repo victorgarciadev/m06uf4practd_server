@@ -36,7 +36,14 @@ public class UsuariEJB implements IUsuari {
 
     @Override
     public void crearUsuari(String email, String nickname) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+
+        try {
+            System.out.println("Entro");
+            //Usuari usuari = new Usuari(email, nickname, 0, false);
+            //em.persist(usuari);
+        } catch (Exception e) {
+        }
+      //  throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
