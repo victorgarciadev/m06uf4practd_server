@@ -54,7 +54,7 @@ public class Lookups {
     }
     
     public static IUsuari usuariEJBLocalLookup() throws NamingException {
-        String strlookup = "java:jboss/exported/" + appName + "/" + UsuariEJB.class.getSimpleName() + "!" + IUsuari.class.getName();
+        String strlookup = "java:jboss/exported/" + appName + "/" + UsuariEJB.class.getSimpleName() + "!common." + IUsuari.class.getName();
             
         Properties jndiProperties = new Properties();
 
