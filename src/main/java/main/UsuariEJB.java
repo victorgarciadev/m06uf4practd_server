@@ -16,9 +16,17 @@ import javax.ejb.LockType;
 import javax.ejb.Stateful;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
+import javax.inject.Inject;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
+import javax.transaction.HeuristicMixedException;
+import javax.transaction.HeuristicRollbackException;
+import javax.transaction.NotSupportedException;
+import javax.transaction.RollbackException;
+import javax.transaction.SystemException;
+import javax.transaction.UserTransaction;
 
 /**
  *
@@ -32,24 +40,37 @@ public class UsuariEJB implements IUsuari {
     @PersistenceContext(unitName = "WordlePersistenceUnit")
     private EntityManager em;
 
+    @Inject
+    private UserTransaction userTransaction;
+
     private static final Logger log = Logger.getLogger(UsuariEJB.class.getName());
 
     @Override
-    public void crearUsuari(String email, String nickname) {
+    public void crearUsuari(String email, String nickname) throws PartidaException {
 
         try {
-            System.out.println("Entro");
-            //Usuari usuari = new Usuari(email, nickname, 0, false);
-            //em.persist(usuari);
-        } catch (Exception e) {
+
+            //crear usuario
+            Usuari u = new Usuari();
+
+            u.setNickname(nickname);
+            u.setEmail(email);
+
+            persisteixAmbTransaccio(u);
+
+        } catch (PartidaException e) {
+//            String msg = "No ha pogut guardar l'usuari a la BBDD";
+//            log.log(Level.INFO, msg);
+            throw new PartidaException(e.getMessage());
         }
-      //  throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        //  throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 
     @Override
     public Usuari getUsuari(String email) {
         try {
-            Usuari user = em.createQuery("SELECT u FROM Usuari u where u.email = :email", Usuari.class).setParameter("email", email).getSingleResult();
+            Usuari user = em.find(Usuari.class, email);
+            System.out.println("Usuario login");
             return user;
         } catch (NoResultException ex) {
             return null;
@@ -109,4 +130,38 @@ public class UsuariEJB implements IUsuari {
         em.merge(usuari);
     }
 
+    /**
+     * *
+     * Valida regles de negoci anotades (veure anotacions al BEAN +
+     * https://javaee.github.io/tutorial/bean-validation002.html) i controla
+     * transacció
+     *
+     * @param ob
+     * @return
+     * @throws PartidaException
+     */
+    private Object persisteixAmbTransaccio(Object ob) throws PartidaException {
+        List<String> errors = Validadors.validaBean(ob);
+
+        if (errors.isEmpty()) {
+            try {
+
+                userTransaction.begin();
+                em.persist(ob);
+                userTransaction.commit();
+
+            } catch (NotSupportedException | SystemException | RollbackException | HeuristicMixedException | HeuristicRollbackException | SecurityException | IllegalStateException ex) {
+                String msg = "Error desant: " + errors.toString();
+                log.log(Level.INFO, msg);
+                throw new PartidaException(msg);
+            }
+
+        } else {
+            String msg = "Errors de validació: " + errors.toString();
+            log.log(Level.INFO, msg);
+            throw new PartidaException(msg);
+        }
+
+        return ob;
+    }
 }

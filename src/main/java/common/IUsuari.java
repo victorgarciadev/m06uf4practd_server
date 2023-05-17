@@ -14,8 +14,9 @@ public interface IUsuari {
      * Crea un nou usuari
      * @param email
      * @param nickname
+     * @throws common.PartidaException
      */
-    public void crearUsuari(String email, String nickname);
+    public void crearUsuari(String email, String nickname) throws PartidaException;
     
     /**
      * Retorna un unsuari pel seu Id
