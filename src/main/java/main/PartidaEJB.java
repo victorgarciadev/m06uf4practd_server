@@ -185,8 +185,7 @@ public class PartidaEJB implements IPartida {
 
     @Override
     public String comprovarParaula(String paraula, int ronda, Usuari nomJugador) {
-        Partida p = gameSingleton.getPartidaActual(true);
-        List<String> paraules = p.getParaules();
+        List<String> paraules = getParaulesPartida();
         String pActual = paraules.get(ronda);
         String result = "";
 
