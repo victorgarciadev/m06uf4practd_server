@@ -5,6 +5,7 @@ import common.PartidaException;
 import common.SelectorParaules;
 import common.Usuari;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.Date;
@@ -33,8 +34,8 @@ import javax.persistence.TypedQuery;
 @ConcurrencyManagement(ConcurrencyManagementType.CONTAINER)
 public class AppSingleton {
 
-    private static final String APP_VERSION = "1.0";
-    private static final String DATE_VERSION = "11/05/2023";
+    private static final String APP_VERSION = "1.0.0";
+    private static final String DATE_VERSION = "16/05/2023";
 
     private static final Logger log = Logger.getLogger(AppSingleton.class.getName());
 
@@ -114,7 +115,7 @@ public class AppSingleton {
                 banner.append((char) b);
             }
 
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             log.log(Level.WARNING, "Error llegint fitxer de logo: {0} : {1}", new Object[]{fileName, ex.toString()});
         }
 

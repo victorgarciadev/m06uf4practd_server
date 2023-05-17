@@ -1,6 +1,5 @@
 package main;
 
-import com.sun.tools.sjavac.Log;
 import common.IPartida;
 import common.IUsuari;
 import common.Lookups;
