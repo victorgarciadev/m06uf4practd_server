@@ -26,12 +26,16 @@ public class SelectorParaules {
         List<String> ret = new ArrayList();
 
         try {
-            if (dificultat.equals("Mig")) {
-                ret = getRandomWords(5);
-            } else if (dificultat.equals("Alt")) {
-                ret = getRandomWords(6);
-            } else {
-                ret = getRandomWords(4);
+            switch (dificultat) {
+                case "Mig":
+                    ret = getRandomWords(5);
+                    break;
+                case "Alt":
+                    ret = getRandomWords(6);
+                    break;
+                default:
+                    ret = getRandomWords(4);
+                    break;
             }
         } catch (Exception ex) {
             log.log(Level.WARNING, "Error de connexi\u00f3 extern a l''API: {0}", ex.toString());

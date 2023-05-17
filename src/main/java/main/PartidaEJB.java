@@ -13,10 +13,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
@@ -57,8 +53,6 @@ public class PartidaEJB implements IPartida {
     private AppSingleton gameSingleton;
 
     private static final Logger log = Logger.getLogger(PartidaEJB.class.getName());
-    private final ScheduledExecutorService ses = Executors.newSingleThreadScheduledExecutor();
-    private ScheduledFuture<?> waitingTime;
     private SalaEspera se;
 
     @PostConstruct
@@ -85,9 +79,14 @@ public class PartidaEJB implements IPartida {
             }
         } else {
             Partida p = gameSingleton.getPartidaActual();
-            Date newDate = p.getDataPartida();
-            newDate.setMinutes(newDate.getMinutes() + 5);
-            se = new SalaEspera(newDate);
+            if (p.getComencada() == 1) {
+                Date newDate = p.getDataPartida();
+                newDate.setMinutes(newDate.getMinutes() + 5);
+                se = new SalaEspera(newDate);
+            } else {
+                se = em.createQuery("SELECT se FROM SalaEspera se", SalaEspera.class).getSingleResult();
+                waitingRoom();
+            }
         }
     }
 
@@ -160,27 +159,8 @@ public class PartidaEJB implements IPartida {
             } catch (PartidaException ex) {
                 log.log(Level.SEVERE, "Error al crear nova partida: {0}", ex.toString());
             }
-
-            //waitingTime = ses.scheduleWithFixedDelay(this::finalitzaPartida, 180, 180, TimeUnit.SECONDS
-//            );
         } catch (PartidaException ex) {
             log.log(Level.WARNING, "Ja hi ha en marxa una partida: {0}", ex.toString());
-        }
-    }
-
-    @Override
-    @Lock(LockType.WRITE)
-    public void finalitzaPartida() {
-        Partida pActual = gameSingleton.getPartidaActual();
-        if (pActual != null) {
-            pActual.setActual(0);
-            try {
-                mergeTransaccio(pActual);
-                log.log(Level.INFO, "Nova partida finalitzada correctament amb ID: {0}", pActual.getId());
-            } catch (PartidaException ex) {
-                log.log(Level.SEVERE, "Error al finalitzar la partida: {0}", ex.toString());
-            }
-            waitingRoom();
         }
     }
 
@@ -197,7 +177,7 @@ public class PartidaEJB implements IPartida {
     }
 
     @Override
-    public void afegirJugador() throws PartidaException {
+    public void afegirJugador(IUsuari usuariEJB) throws PartidaException {
         Usuari jugador = new Usuari();
 //        try {
         //IUsuari usuariEJB = Lookups.usuariEJBRemoteLookup();
@@ -264,15 +244,23 @@ public class PartidaEJB implements IPartida {
     @Lock(LockType.WRITE)
     public void waitingRoom() {
         int timeRemaining = timeRemaining();
-        try {
-            afegirJugador();
-        } catch (PartidaException ex) {
-            Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
-        }
+//        try {
+//            afegirJugador(usuariEJB);
+//        } catch (PartidaException ex) {
+//            Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
+//        }
         do {
             timeRemaining = timeRemaining();
             log.log(Level.INFO, "esperant per començar la partida ... " + timeRemaining);
         } while (timeRemaining < 0);
+        Partida p = gameSingleton.getPartidaActual();
+        p.setComencada(1);
+        try {
+            mergeTransaccio(p);
+            log.log(Level.INFO, "waitingRoom() --> partida començada");
+        } catch (PartidaException ex) {
+            log.log(Level.SEVERE, "Error al posar la partida en marxa: {0}", ex.toString());
+        }
     }
 
     @Override
@@ -282,7 +270,6 @@ public class PartidaEJB implements IPartida {
             log.log(Level.INFO, ">>>> Hora comença " + horaComenca);
             Date actualDate = new Date();
             log.log(Level.INFO, ">>> hora actual " + actualDate);
-
             Instant startDate = horaComenca.toInstant();
             Instant endDate = actualDate.toInstant();
             Duration duration = Duration.between(endDate, startDate);
