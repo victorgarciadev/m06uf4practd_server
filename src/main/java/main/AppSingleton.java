@@ -148,7 +148,9 @@ public class AppSingleton {
         partida.setParaules(SelectorParaules.getLlistatParaules(partida.getDificultat()));
         partida.setComencada(0);
         log.log(Level.INFO, "Creada nova partida amb dificultat {0} i amb data de {1}", new Object[]{partida.getDificultat(), partida.getDataPartida()});
-        Timer timer = timerService.createSingleActionTimer(300000, new TimerConfig());
+        TimerConfig timerConfig = new TimerConfig();
+        timerConfig.setPersistent(false);
+        Timer timer = timerService.createSingleActionTimer(300000, timerConfig);
         return partida;
     }
 
