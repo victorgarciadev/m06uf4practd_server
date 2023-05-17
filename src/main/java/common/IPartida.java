@@ -12,9 +12,8 @@ public interface IPartida {
     
    /**
     * Comença una nova partida
-     * @param usuaris
     */
-    public void novaPartida(List<Usuari> usuaris);
+    public void novaPartida();
     
     /**
      * Tanca una partida
@@ -40,10 +39,9 @@ public interface IPartida {
     
     /**
      * Afegeix un jugador a la partida 
-     * @return  
      * @throws common.PartidaException 
      */
-    public List<Usuari> afegirJugadors() throws PartidaException;
+    public void afegirJugador() throws PartidaException;
     
     /**
      * Comprova la paraula enviada de l'usuari lletra per lletra
@@ -71,5 +69,5 @@ public interface IPartida {
      * Mètode que retorna el temps que falta pel canvi de pantalla entre el joc i la sala d'espera
      * @return 
      */
-    public Long timeRemaining();
+    public int timeRemaining();
 }

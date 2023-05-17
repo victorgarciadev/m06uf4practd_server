@@ -7,6 +7,7 @@ import common.Usuari;
 import java.io.File;
 import java.io.InputStream;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -127,15 +128,15 @@ public class AppSingleton {
     }
 
     @Lock(LockType.WRITE)
-    public Partida createPartida(List<Usuari> usuaris) throws PartidaException {
+    public Partida createPartida() throws PartidaException {
         if (getPartidaActual() != null) {
             throw new PartidaException("Ja hi ha una partida en marxa");
         }
         String[] dificultats = {"Facil", "Mig", "Alta"};
         Partida partida = new Partida();
-        partida.setUsuaris(usuaris);
+        partida.setUsuaris(new ArrayList<>());
         partida.setDataPartida(Date.from(Instant.now()));
-        partida.setActual(true);
+        partida.setActual(1);
         partida.setDificultat(dificultats[new Random().nextInt(dificultats.length)]);
         partida.setParaules(SelectorParaules.getLlistatParaules(partida.getDificultat()));
         log.log(Level.INFO, "Creada nova partida amb dificultat {0} i amb data de {1}", new Object[]{partida.getDificultat(), partida.getDataPartida()});
@@ -144,7 +145,7 @@ public class AppSingleton {
     
     @Lock(LockType.READ)
     public Partida getPartidaActual() {
-        TypedQuery<Partida> query = em.createQuery("SELECT p FROM Partida p where p.actual = true", Partida.class);
+        TypedQuery<Partida> query = em.createQuery("SELECT p FROM Partida p where p.actual = 1", Partida.class);
         Partida ret = null;
 
         try {
