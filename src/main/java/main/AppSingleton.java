@@ -136,12 +136,11 @@ public class AppSingleton {
 
     @Lock(LockType.WRITE)
     public Partida createPartida() throws PartidaException {
-        if (getPartidaActual() != null) {
+        if (getPartidaActual(false) != null) {
             throw new PartidaException("Ja hi ha una partida en marxa");
         }
         String[] dificultats = {"Facil", "Mig", "Alta"};
         Partida partida = new Partida();
-        partida.setUsuaris(new ArrayList<>());
         partida.setDataPartida(Date.from(Instant.now()));
         partida.setActual(1);
         partida.setDificultat(dificultats[new Random().nextInt(dificultats.length)]);
@@ -155,19 +154,28 @@ public class AppSingleton {
     }
 
     @Lock(LockType.READ)
-    public Partida getPartidaActual() {
-        TypedQuery<Partida> query = em.createQuery("SELECT p FROM Partida p where p.actual = 1", Partida.class);
-        Partida ret = null;
-
-        try {
-            Partida p = query.getSingleResult();
-            ret = p;
-        } catch (NoResultException ex) {
-            log.log(Level.INFO, "getPartidaActual() --> no hi ha cap partida en marxa");
-            return null;
+    public Partida getPartidaActual(boolean paraules) {
+        if (!paraules) {
+            try {
+                TypedQuery<Partida> query = em.createQuery("SELECT p FROM Partida p where p.actual = 1", Partida.class);
+                Partida p = query.getSingleResult();
+                log.log(Level.INFO, "getPartidaActual() --> partida agafada correctament");
+                return p;
+            } catch (NoResultException ex) {
+                log.log(Level.WARNING, "getPartidaActual() --> no hi ha cap partida en marxa: {0}", ex.toString());
+                return null;
+            }
+        } else {
+            try {
+                TypedQuery<Partida> query = em.createQuery("SELECT p FROM Partida p JOIN FETCH p.paraules where p.actual = 1", Partida.class);
+                Partida p = query.getSingleResult();
+                log.log(Level.INFO, "getPartidaActual() --> partida amb paraules agafada correctament");
+                return p;
+            } catch (NoResultException ex) {
+                log.log(Level.WARNING, "getPartidaActual() --> no hi ha cap partida en marxa: {0}", ex.toString());
+                return null;
+            }
         }
-
-        return ret;
     }
 
     @Timeout
@@ -177,7 +185,7 @@ public class AppSingleton {
     }
 
     public void finalitzaPartida() {
-        Partida pActual = getPartidaActual();
+        Partida pActual = getPartidaActual(false);
         if (pActual != null) {
             pActual.setActual(0);
             try {

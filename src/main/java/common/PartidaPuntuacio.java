@@ -46,7 +46,7 @@ public class PartidaPuntuacio implements Serializable {
         this.menorTempsEncert = menorTempsEncert;
         this.ronda = ronda;
     }
-
+    
     public Long getId() {
         return id;
     }

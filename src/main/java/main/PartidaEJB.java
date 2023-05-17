@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.ejb.ConcurrencyManagement;
 import javax.ejb.ConcurrencyManagementType;
@@ -29,6 +30,7 @@ import javax.naming.NamingException;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.SystemException;
@@ -57,11 +59,12 @@ public class PartidaEJB implements IPartida {
 
     @PostConstruct
     public void onStartup() {
-        checkPartida();
+        checkPartida("hall");
     }
 
-    public void checkPartida() {
-        if (gameSingleton.getPartidaActual() == null) {
+    @Override
+    public void checkPartida(String pantalla) {
+        if (gameSingleton.getPartidaActual(false) == null) {
             log.log(Level.INFO, "Inicialitzant programa... iniciant sala d'espera");
             try {
                 se = em.createQuery("SELECT se FROM SalaEspera se", SalaEspera.class).getSingleResult();
@@ -78,10 +81,15 @@ public class PartidaEJB implements IPartida {
                 }
             }
         } else {
-            Partida p = gameSingleton.getPartidaActual();
+            log.log(Level.INFO, "Ja hi ha una partida iniciada");
+            Partida p = gameSingleton.getPartidaActual(false);
             if (p.getComencada() == 1) {
                 Date newDate = p.getDataPartida();
-                newDate.setMinutes(newDate.getMinutes() + 5);
+                if (pantalla.equals("joc")) {
+                    newDate.setMinutes(newDate.getMinutes() + 5);
+                } else {
+                    newDate.setMinutes(newDate.getMinutes() + 7);
+                }
                 se = new SalaEspera(newDate);
             } else {
                 se = em.createQuery("SELECT se FROM SalaEspera se", SalaEspera.class).getSingleResult();
@@ -104,7 +112,7 @@ public class PartidaEJB implements IPartida {
 
             Usuari jugador = usuariEJB.getUsuari(nomJugador);
 
-            Partida partida = gameSingleton.getPartidaActual();
+            Partida partida = gameSingleton.getPartidaActual(false);
 
             PartidaPuntuacio puntuacio = em.createQuery(
                     "SELECT pp FROM PartidaPuntuacio pp WHERE pp.usuari = :usuari AND pp.partida = :partida",
@@ -165,38 +173,19 @@ public class PartidaEJB implements IPartida {
     }
 
     @Override
-    public List<Usuari> getLlistatJugadors() {
-        Partida p = gameSingleton.getPartidaActual();
-
-        if (p == null) {
-            log.log(Level.INFO, "getLlistatJugadors() --> no hi ha cap partida en marxa");
-            return null;
-        }
-
-        return p.getUsuaris();
-    }
-
-    @Override
-    public void afegirJugador(IUsuari usuariEJB) throws PartidaException {
+    public void afegirJugador(IUsuari usuariEJB, String email) throws PartidaException {
         Usuari jugador = new Usuari();
-//        try {
-        //IUsuari usuariEJB = Lookups.usuariEJBRemoteLookup();
 
-        jugador = new Usuari("asd", "asdasd", 0, true);
-        Partida partida = gameSingleton.getPartidaActual();
-        List<Usuari> usuaris = partida.getUsuaris();
-        usuaris.add(jugador);
-        partida.setUsuaris(usuaris);
-        mergeTransaccio(partida);
-//        } catch (NamingException ex) {
-//            log.log(Level.WARNING, "Error intern d'EJB: {0}", ex.toString());
-//            throw new PartidaException("Error de beans intern: " + ex.toString());
-//        }
+        jugador = usuariEJB.getUsuari(email);
+        Partida partida = gameSingleton.getPartidaActual(false);
+        PartidaPuntuacio pp = new PartidaPuntuacio(partida, jugador, 0, 180d, 0);
+        persisteixTransaccio(pp);
+        log.log(Level.INFO, "Jugador afegit a la partida correctament");
     }
 
     @Override
     public String comprovarParaula(String paraula, int ronda, Usuari nomJugador) {
-        Partida p = gameSingleton.getPartidaActual();
+        Partida p = gameSingleton.getPartidaActual(true);
         List<String> paraules = p.getParaules();
         String pActual = paraules.get(ronda);
         String result = "";
@@ -252,8 +241,8 @@ public class PartidaEJB implements IPartida {
         do {
             timeRemaining = timeRemaining();
             log.log(Level.INFO, "esperant per començar la partida ... " + timeRemaining);
-        } while (timeRemaining < 0);
-        Partida p = gameSingleton.getPartidaActual();
+        } while (timeRemaining > 0);
+        Partida p = gameSingleton.getPartidaActual(false);
         p.setComencada(1);
         try {
             mergeTransaccio(p);
@@ -280,9 +269,28 @@ public class PartidaEJB implements IPartida {
         }
     }
 
+    @Override
+    public String getDificultatPartidaActual() {
+        Partida p = gameSingleton.getPartidaActual(false);
+        log.log(Level.INFO, "Partida acutal --> {0}", p);
+        log.log(Level.INFO, "dificultat --> {0}", p.getDificultat());
+        return p.getDificultat();
+    }
+
+    @Override
+    public List<String> getParaulesPartida() {
+        Partida p = gameSingleton.getPartidaActual(true);
+        log.log(Level.INFO, "Paraules partida --> {0}", p.getParaules());
+        List<String> nestedList = p.getParaules();
+        List<String> flattenedList = nestedList.stream()
+                .collect(Collectors.toList());
+        log.log(Level.INFO, "Paraules sense array --> {0}", flattenedList);
+        return flattenedList;
+    }
+
     private int calcularPuntsRonda(String resultat, int ronda) {
         int punts = 0;
-        Partida p = gameSingleton.getPartidaActual();
+        Partida p = gameSingleton.getPartidaActual(true);
         List<String> paraules = p.getParaules();
         String pActual = paraules.get(ronda);
 

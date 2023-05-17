@@ -14,13 +14,12 @@ public interface IPartida {
     * Comença una nova partida
     */
     public void novaPartida();
-    
+
     /**
-     * Llista dels jugadors d'una partida
-     * @return 
-     * @throws common.PartidaException 
+     * Mètode que checkeja l'estat del servidor
+     * @param pantalla
      */
-    public List<Usuari> getLlistatJugadors() throws PartidaException;
+    public void checkPartida(String pantalla);
     
     /**
      * Actualitza la puntuació d'un jugador a una partida
@@ -35,9 +34,10 @@ public interface IPartida {
     /**
      * Afegeix un jugador a la partida 
      * @param usuariEJB
+     * @param email
      * @throws common.PartidaException 
      */
-    public void afegirJugador(IUsuari usuariEJB) throws PartidaException;
+    public void afegirJugador(IUsuari usuariEJB, String email) throws PartidaException;
     
     /**
      * Comprova la paraula enviada de l'usuari lletra per lletra
@@ -60,6 +60,19 @@ public interface IPartida {
      * M�tode que controla el temps d'espera entre partida i partida
      */
     public void waitingRoom();
+    
+    /**
+     * Mètode que retorna la dificultat de la partida que s'esta jugant actualment
+     * @return 
+     */
+    public String getDificultatPartidaActual();
+    
+    
+    /**
+     * Mètode que retorna les paraules a endevinar de la partida
+     * @return 
+     */
+    public List<String> getParaulesPartida();
     
     /**
      * Mètode que retorna el temps que falta pel canvi de pantalla entre el joc i la sala d'espera
