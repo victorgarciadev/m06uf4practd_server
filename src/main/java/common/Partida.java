@@ -38,16 +38,19 @@ public class Partida implements Serializable {
     private String dificultat;
     
     private int actual;
+    
+    private int comencada;
 
     public Partida() {
     }
 
-    public Partida(Date dataPartida, List<String> paraules, List<Usuari> usuaris, String dificultat, int actual) {
+    public Partida(Date dataPartida, List<String> paraules, List<Usuari> usuaris, String dificultat, int actual, int comencada) {
         this.dataPartida = dataPartida;
         this.paraules = paraules;
         this.usuaris = usuaris;
         this.dificultat = dificultat;
         this.actual = actual;
+        this.comencada = comencada;
     }
 
     public int getId() {
@@ -96,6 +99,14 @@ public class Partida implements Serializable {
 
     public void setActual(int actual) {
         this.actual = actual;
+    }
+
+    public int getComencada() {
+        return comencada;
+    }
+
+    public void setComencada(int comencada) {
+        this.comencada = comencada;
     }
 
     @Override

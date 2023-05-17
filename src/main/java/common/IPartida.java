@@ -16,11 +16,6 @@ public interface IPartida {
     public void novaPartida();
     
     /**
-     * Tanca una partida
-     */
-    public void finalitzaPartida();
-    
-    /**
      * Llista dels jugadors d'una partida
      * @return 
      * @throws common.PartidaException 
@@ -39,9 +34,10 @@ public interface IPartida {
     
     /**
      * Afegeix un jugador a la partida 
+     * @param usuariEJB
      * @throws common.PartidaException 
      */
-    public void afegirJugador() throws PartidaException;
+    public void afegirJugador(IUsuari usuariEJB) throws PartidaException;
     
     /**
      * Comprova la paraula enviada de l'usuari lletra per lletra

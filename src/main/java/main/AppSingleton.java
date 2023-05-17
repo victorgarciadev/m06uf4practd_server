@@ -3,24 +3,27 @@ package main;
 import common.Partida;
 import common.PartidaException;
 import common.SelectorParaules;
-import common.Usuari;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import javax.ejb.ConcurrencyManagement;
 import javax.ejb.ConcurrencyManagementType;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+import javax.ejb.Timeout;
+import javax.ejb.Timer;
+import javax.ejb.TimerConfig;
+import javax.ejb.TimerService;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
@@ -40,6 +43,9 @@ public class AppSingleton {
 
     private static final Logger log = Logger.getLogger(AppSingleton.class.getName());
 
+    @Resource
+    private TimerService timerService;
+
     // darrera actualitzacio de la BBDD
     private Date lastUpdateDBUTC;
 
@@ -48,7 +54,7 @@ public class AppSingleton {
 
     @PersistenceContext(unitName = "WordlePersistenceUnit")
     private EntityManager em;
-    
+
     @PostConstruct //With this annotation, it'll be called by the container upon instantiation of the bean
     public void initialize() {
         this.showLogo();
@@ -140,10 +146,12 @@ public class AppSingleton {
         partida.setActual(1);
         partida.setDificultat(dificultats[new Random().nextInt(dificultats.length)]);
         partida.setParaules(SelectorParaules.getLlistatParaules(partida.getDificultat()));
+        partida.setComencada(0);
         log.log(Level.INFO, "Creada nova partida amb dificultat {0} i amb data de {1}", new Object[]{partida.getDificultat(), partida.getDataPartida()});
+        Timer timer = timerService.createSingleActionTimer(300000, new TimerConfig());
         return partida;
     }
-    
+
     @Lock(LockType.READ)
     public Partida getPartidaActual() {
         TypedQuery<Partida> query = em.createQuery("SELECT p FROM Partida p where p.actual = 1", Partida.class);
@@ -158,5 +166,26 @@ public class AppSingleton {
         }
 
         return ret;
+    }
+
+    @Timeout
+    public void timeout(Timer timer) {
+        log.log(Level.INFO, "TimerBean: timeout occurred");
+        finalitzaPartida();
+    }
+
+    public void finalitzaPartida() {
+        Partida pActual = getPartidaActual();
+        if (pActual != null) {
+            pActual.setActual(0);
+            try {
+                em.merge(pActual);
+                log.log(Level.INFO, "Nova partida finalitzada correctament amb ID: {0}", pActual.getId());
+                em.createQuery("DELETE FROM SalaEspera").executeUpdate();
+                log.log(Level.INFO, "Taula SalaEspera esborrada");
+            } catch (Exception ex) {
+                log.log(Level.SEVERE, "Error al finalitzar la partida o a l'esborrar la taula SalaEspera: {0}", ex.toString());
+            }
+        }
     }
 }
