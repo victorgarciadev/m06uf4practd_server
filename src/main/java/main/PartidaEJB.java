@@ -71,7 +71,7 @@ public class PartidaEJB implements IPartida {
                 waitingRoom();
             } catch (NoResultException ex) {
                 Date dateComenca = new Date();
-                dateComenca.setMinutes(dateComenca.getMinutes() + 2);
+                dateComenca.setMinutes(dateComenca.getMinutes() + 1);
                 se = new SalaEspera(dateComenca);
                 try {
                     persisteixTransaccio(se);
@@ -174,8 +174,11 @@ public class PartidaEJB implements IPartida {
     @Override
     public String comprovarParaula(String paraula, int ronda, Usuari nomJugador) {
         List<String> paraules = getParaulesPartida();
-        String pActual = paraules.get(ronda);
+        paraula = paraula.toLowerCase();
+        String words = paraules.get(0);
+        String pActual = getParaulaRonda(words, ronda);
         String result = "";
+        log.log(Level.INFO, "paraula comprovant --> {0}", pActual);
 
         for (int i = 0; i < pActual.length(); i++) {
             char targetChar = pActual.charAt(i);
@@ -262,7 +265,6 @@ public class PartidaEJB implements IPartida {
     @Override
     public List<String> getParaulesPartida() {
         Partida p = gameSingleton.getPartidaActual(true);
-        log.log(Level.INFO, "Paraules partida --> {0}", p.getParaules());
         List<String> nestedList = p.getParaules();
         List<String> flattenedList = nestedList.stream()
                 .collect(Collectors.toList());
@@ -274,11 +276,13 @@ public class PartidaEJB implements IPartida {
         int punts = 0;
         Partida p = gameSingleton.getPartidaActual(true);
         List<String> paraules = p.getParaules();
-        String pActual = paraules.get(ronda);
+        String words = paraules.get(0);
+        String pActual = getParaulaRonda(words, ronda);
+
 
         if (pActual.equals(resultat)) {
             punts += resultat.length();
-            List<PartidaPuntuacio> jugadorsRondaAcabada = getJugadorsPerRonda(p, ronda+1);
+            List<PartidaPuntuacio> jugadorsRondaAcabada = getJugadorsPerRonda(p, ronda + 1);
             if (jugadorsRondaAcabada.isEmpty()) {
                 punts += 10;
             } else if (jugadorsRondaAcabada.size() == 1) {
@@ -297,6 +301,16 @@ public class PartidaEJB implements IPartida {
         }
 
         return punts;
+    }
+    
+    private String getParaulaRonda(String words, int ronda) {
+        String wordsString = words.replaceAll("\\[|\\]", "");
+        String[] wordsArray = wordsString.split(",");
+        for (int i = 0; i < wordsArray.length; i++) {
+            wordsArray[i] = wordsArray[i].replaceAll("\"", "");
+            wordsArray[i] = wordsArray[i].trim();
+        }
+        return wordsArray[ronda];
     }
 
     private void persisteixTransaccio(Object ob) throws PartidaException {

@@ -30,7 +30,7 @@ public class SelectorParaules {
                 case "Mig":
                     ret = getRandomWords(5);
                     break;
-                case "Alt":
+                case "Alta":
                     ret = getRandomWords(6);
                     break;
                 default:
