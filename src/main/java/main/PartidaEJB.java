@@ -99,61 +99,49 @@ public class PartidaEJB implements IPartida {
     }
 
     @Override
-    public void actualitzarPuntuacio(String nomJugador, String resultat, int ronda, double temps) throws PartidaException {
+    public void actualitzarPuntuacio(Usuari jugador, String resultat, int ronda, double temps) throws PartidaException {
 
-        try {
-            int punts = calcularPuntsRonda(resultat, ronda);
-            IUsuari usuariEJB = Lookups.usuariEJBRemoteLookup();
+        int punts = calcularPuntsRonda(resultat, ronda);
 
-            if (nomJugador == null || nomJugador.isBlank() || nomJugador.isEmpty()) {
-                log.log(Level.WARNING, "actualitzarPuntuacio() --> Nom del jugador no vàlid");
-                throw new PartidaException("Jugador no vàlid");
+        Partida partida = gameSingleton.getPartidaActual(false);
+
+        PartidaPuntuacio puntuacio = em.createQuery(
+                "SELECT pp FROM PartidaPuntuacio pp WHERE pp.usuari = :usuari AND pp.partida = :partida",
+                PartidaPuntuacio.class)
+                .setParameter("usuari", jugador)
+                .setParameter("partida", partida)
+                .getResultList()
+                .stream()
+                .findFirst()
+                .orElse(null);
+
+        if (puntuacio != null) {
+            puntuacio.setPunts(puntuacio.getPunts() + punts);
+            puntuacio.setRonda(ronda);
+            if (temps < puntuacio.getMenorTempsEncert() && punts > 0) {
+                puntuacio.setMenorTempsEncert(temps);
             }
-
-            Usuari jugador = usuariEJB.getUsuari(nomJugador);
-
-            Partida partida = gameSingleton.getPartidaActual(false);
-
-            PartidaPuntuacio puntuacio = em.createQuery(
-                    "SELECT pp FROM PartidaPuntuacio pp WHERE pp.usuari = :usuari AND pp.partida = :partida",
-                    PartidaPuntuacio.class)
-                    .setParameter("usuari", jugador)
-                    .setParameter("partida", partida)
-                    .getResultList()
-                    .stream()
-                    .findFirst()
-                    .orElse(null);
-
-            if (puntuacio != null) {
-                puntuacio.setPunts(puntuacio.getPunts() + punts);
-                puntuacio.setRonda(ronda);
-                if (temps < puntuacio.getMenorTempsEncert() && punts > 0) {
-                    puntuacio.setMenorTempsEncert(temps);
-                }
-                try {
-                    mergeTransaccio(puntuacio);
-                    log.log(Level.INFO, "Puntuaci\u00f3 de l''usuari {0}actualitzada correctament", nomJugador);
-                } catch (PartidaException ex) {
-                    log.log(Level.SEVERE, "Error de persist\u00e8ncia a l''actualitzar la puntuaci\u00f3 del jugador {0}:{1}", new Object[]{nomJugador, ex.toString()});
-                    throw new PartidaException("Error de persistència a la base de dades: " + ex.toString());
-                }
-            } else {
-                PartidaPuntuacio novaPuntuacio = new PartidaPuntuacio();
-                novaPuntuacio.setPartida(partida);
-                novaPuntuacio.setUsuari(jugador);
-                novaPuntuacio.setPunts(punts);
-                novaPuntuacio.setMenorTempsEncert(temps);
-                novaPuntuacio.setRonda(ronda);
-                try {
-                    persisteixTransaccio(novaPuntuacio);
-                    log.log(Level.INFO, "Puntuaci\u00f3 de l''usuari {0}actualitzada correctament", nomJugador);
-                } catch (PartidaException ex) {
-                    log.log(Level.SEVERE, "Error de persist\u00e8ncia a l''actualitzar la puntuaci\u00f3 del jugador {0}:{1}", new Object[]{nomJugador, ex.toString()});
-                    throw new PartidaException("Error de persistència a la base de dades: " + ex.toString());
-                }
+            try {
+                mergeTransaccio(puntuacio);
+                log.log(Level.INFO, "Puntuaci\u00f3 de l''usuari {0}actualitzada correctament", jugador.getNickname());
+            } catch (PartidaException ex) {
+                log.log(Level.SEVERE, "Error de persist\u00e8ncia a l''actualitzar la puntuaci\u00f3 del jugador {0}:{1}", new Object[]{jugador.getNickname(), ex.toString()});
+                throw new PartidaException("Error de persistència a la base de dades: " + ex.toString());
             }
-        } catch (NamingException ex) {
-            throw new PartidaException("Error de beans intern: " + ex.toString());
+        } else {
+            PartidaPuntuacio novaPuntuacio = new PartidaPuntuacio();
+            novaPuntuacio.setPartida(partida);
+            novaPuntuacio.setUsuari(jugador);
+            novaPuntuacio.setPunts(punts);
+            novaPuntuacio.setMenorTempsEncert(temps);
+            novaPuntuacio.setRonda(ronda);
+            try {
+                persisteixTransaccio(novaPuntuacio);
+                log.log(Level.INFO, "Puntuaci\u00f3 de l''usuari {0}actualitzada correctament", jugador.getNickname());
+            } catch (PartidaException ex) {
+                log.log(Level.SEVERE, "Error de persist\u00e8ncia a l''actualitzar la puntuaci\u00f3 del jugador {0}:{1}", new Object[]{jugador.getNickname(), ex.toString()});
+                throw new PartidaException("Error de persistència a la base de dades: " + ex.toString());
+            }
         }
     }
 
@@ -231,12 +219,7 @@ public class PartidaEJB implements IPartida {
     @Override
     @Lock(LockType.WRITE)
     public void waitingRoom() {
-        int timeRemaining = timeRemaining();
-//        try {
-//            afegirJugador(usuariEJB);
-//        } catch (PartidaException ex) {
-//            Logger.getLogger(PartidaEJB.class.getName()).log(Level.SEVERE, null, ex);
-//        }
+        int timeRemaining;
         do {
             timeRemaining = timeRemaining();
             log.log(Level.INFO, "esperant per començar la partida ... " + timeRemaining);
@@ -295,7 +278,7 @@ public class PartidaEJB implements IPartida {
 
         if (pActual.equals(resultat)) {
             punts += resultat.length();
-            List<PartidaPuntuacio> jugadorsRondaAcabada = getJugadorsPerRonda(p, ronda);
+            List<PartidaPuntuacio> jugadorsRondaAcabada = getJugadorsPerRonda(p, ronda+1);
             if (jugadorsRondaAcabada.isEmpty()) {
                 punts += 10;
             } else if (jugadorsRondaAcabada.size() == 1) {

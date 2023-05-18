@@ -23,13 +23,13 @@ public interface IPartida {
     
     /**
      * Actualitza la puntuació d'un jugador a una partida
-     * @param nomJugador
+     * @param jugador
      * @param resultat
      * @param ronda 
      * @param temps 
      * @throws common.PartidaException 
      */
-    public void actualitzarPuntuacio(String nomJugador, String resultat, int ronda, double temps) throws PartidaException;
+    public void actualitzarPuntuacio(Usuari jugador, String resultat, int ronda, double temps) throws PartidaException;
     
     /**
      * Afegeix un jugador a la partida 
