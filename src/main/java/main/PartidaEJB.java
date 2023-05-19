@@ -67,7 +67,7 @@ public class PartidaEJB implements IPartida {
                 waitingRoom();
             } catch (NoResultException ex) {
                 Date dateComenca = new Date();
-                dateComenca.setMinutes(dateComenca.getMinutes() + 1);
+                dateComenca.setMinutes(dateComenca.getMinutes() + 2);
                 se = new SalaEspera(dateComenca);
                 try {
                     persisteixTransaccio(se);
