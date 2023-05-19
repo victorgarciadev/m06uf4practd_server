@@ -17,66 +17,65 @@ public interface IPartida {
 
     /**
      * Mètode que checkeja l'estat del servidor
-     * @param pantalla
+     * @param pantalla a la que està el client
      */
     public void checkPartida(String pantalla);
     
     /**
      * Actualitza la puntuació d'un jugador a una partida
-     * @param jugador
-     * @param resultat
-     * @param ronda 
-     * @param temps 
+     * @param jugador actual
+     * @param resultat string amb la comprovació de la paraula
+     * @param ronda ronda del joc
+     * @param temps temps trigat a resoldre la paraula
      * @throws common.PartidaException 
      */
     public void actualitzarPuntuacio(Usuari jugador, String resultat, int ronda, double temps) throws PartidaException;
     
     /**
      * Afegeix un jugador a la partida 
-     * @param usuariEJB
-     * @param email
+     * @param jugador usuari acutal 
      * @throws common.PartidaException 
      */
-    public void afegirJugador(IUsuari usuariEJB, String email) throws PartidaException;
+    public void afegirJugador(Usuari jugador) throws PartidaException;
     
     /**
      * Comprova la paraula enviada de l'usuari lletra per lletra
-     * @param paraula
-     * @param ronda
-     * @param nomJugador
-     * @return 
+     * @param paraula paraula enviada
+     * @param ronda ronda de la partida
+     * @param nomJugador jugador actual
+     * @return string comprovant de la paraula
      * @throws common.PartidaException 
      */
     public String comprovarParaula(String paraula, int ronda, Usuari nomJugador) throws PartidaException;
     
     /**
      * Retorna tots els jugadors d'una partida amb la seva puntuació
-     * @param p
-     * @return
+     * @param p partida actual
+     * @return llista amb usuaris de la partida
      */
     public List<Usuari> getJugadorsPartidaAmbPuntuacio(Partida p);
     
     /**
-     * M�tode que controla el temps d'espera entre partida i partida
+     * Mètode que controla el temps d'espera entre partida i partida
      */
     public void waitingRoom();
     
     /**
      * Mètode que retorna la dificultat de la partida que s'esta jugant actualment
-     * @return 
+     * @return string amb la dificultat de la partida
      */
     public String getDificultatPartidaActual();
     
     
     /**
      * Mètode que retorna les paraules a endevinar de la partida
-     * @return 
+     * @return llista amb totes les paraules
      */
     public List<String> getParaulesPartida();
     
     /**
      * Mètode que retorna el temps que falta pel canvi de pantalla entre el joc i la sala d'espera
-     * @return 
+     * @return int segons que falten
      */
     public int timeRemaining();
 }

@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Random;
 import java.util.logging.Level;
@@ -134,6 +133,11 @@ public class AppSingleton {
         log.log(Level.INFO, banner.toString());
     }
 
+    /**
+     * Crea una nova partida amb dificultat i paraules random
+     * @return Partida creada
+     * @throws PartidaException 
+     */
     @Lock(LockType.WRITE)
     public Partida createPartida() throws PartidaException {
         if (getPartidaActual(false) != null) {
@@ -153,6 +157,11 @@ public class AppSingleton {
         return partida;
     }
 
+    /**
+     * Mètode que retorna la partida actual que s'està jugant
+     * @param paraules boolean per saber si es vol que es retornin les paraules també
+     * @return Partida actual
+     */
     @Lock(LockType.READ)
     public Partida getPartidaActual(boolean paraules) {
         if (!paraules) {
@@ -178,12 +187,20 @@ public class AppSingleton {
         }
     }
 
+    /**
+     * Timeout que finalitza la partida després de 300 segons.
+     * @param timer 
+     */
     @Timeout
     public void timeout(Timer timer) {
         log.log(Level.INFO, "TimerBean: timeout occurred");
         finalitzaPartida();
     }
 
+    /**
+     * Mètode per finalitzar la partida. Canvia l'estat d'actual a 0 i esborra la taula
+     * SalaEspera de la BD
+     */
     public void finalitzaPartida() {
         Partida pActual = getPartidaActual(false);
         if (pActual != null) {

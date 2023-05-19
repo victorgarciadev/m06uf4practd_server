@@ -1,8 +1,6 @@
 package main;
 
 import common.IPartida;
-import common.IUsuari;
-import common.Lookups;
 import common.Partida;
 import common.PartidaException;
 import common.PartidaPuntuacio;
@@ -26,11 +24,9 @@ import javax.ejb.Stateful;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
-import javax.naming.NamingException;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
-import javax.persistence.TypedQuery;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.SystemException;
@@ -161,10 +157,7 @@ public class PartidaEJB implements IPartida {
     }
 
     @Override
-    public void afegirJugador(IUsuari usuariEJB, String email) throws PartidaException {
-        Usuari jugador = new Usuari();
-
-        jugador = usuariEJB.getUsuari(email);
+    public void afegirJugador(Usuari jugador) throws PartidaException {
         Partida partida = gameSingleton.getPartidaActual(false);
         PartidaPuntuacio pp = new PartidaPuntuacio(partida, jugador, 0, 180d, 0);
         persisteixTransaccio(pp);
@@ -212,6 +205,12 @@ public class PartidaEJB implements IPartida {
         return ret;
     }
 
+    /**
+     * Retorna els jugadors que han pasat de ronda.
+     * @param p partida actual
+     * @param ronda número de ronda
+     * @return llista de jugadors
+     */
     public List<PartidaPuntuacio> getJugadorsPerRonda(Partida p, int ronda) {
         List<PartidaPuntuacio> jugadors = em.createQuery("SELECT pp FROM PartidaPuntuacio pp WHERE pp.partida = :partida AND pp.ronda = :ronda", PartidaPuntuacio.class)
                 .setParameter("partida", p).setParameter("ronda", ronda).getResultList();
@@ -272,6 +271,12 @@ public class PartidaEJB implements IPartida {
         return flattenedList;
     }
 
+    /**
+     * Mètode que calcula els punts que s'han d'afegir a un usuari
+     * @param resultat string de la paraula comprovada
+     * @param ronda ronda actual
+     * @return int total punts nous
+     */
     private int calcularPuntsRonda(String resultat, int ronda) {
         int punts = 0;
         Partida p = gameSingleton.getPartidaActual(true);
@@ -303,6 +308,12 @@ public class PartidaEJB implements IPartida {
         return punts;
     }
     
+    /**
+     * Mètode que retorna la paraula de la ronda actual de una partida
+     * @param words String amb totes les paraules de la partida
+     * @param ronda ronda actual
+     * @return String paraula actual
+     */
     private String getParaulaRonda(String words, int ronda) {
         String wordsString = words.replaceAll("\\[|\\]", "");
         String[] wordsArray = wordsString.split(",");
@@ -313,6 +324,11 @@ public class PartidaEJB implements IPartida {
         return wordsArray[ronda];
     }
 
+    /**
+     * Mètode que persisteix un objecte a la BD després de comprovar les validacions
+     * @param ob
+     * @throws PartidaException 
+     */
     private void persisteixTransaccio(Object ob) throws PartidaException {
         List<String> errors = Validadors.validaBean(ob);
 
@@ -331,10 +347,13 @@ public class PartidaEJB implements IPartida {
             throw new PartidaException("Error de validació de dades: " + errors.toString());
 
         }
-
-//        return ob;
     }
 
+    /**
+     * Mètode que actualitza un objecte a la BD després de comprovar les validacions
+     * @param ob
+     * @throws PartidaException 
+     */
     private void mergeTransaccio(Object ob) throws PartidaException {
         List<String> errors = Validadors.validaBean(ob);
 
@@ -352,7 +371,5 @@ public class PartidaEJB implements IPartida {
             log.log(Level.WARNING, "Error de validaci\u00f3 de dades: {0}", errors.toString());
             throw new PartidaException("Error de validació de dades: " + errors.toString());
         }
-
-//        return ob;
     }
 }
