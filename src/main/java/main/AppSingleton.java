@@ -139,7 +139,7 @@ public class AppSingleton {
      * @throws PartidaException 
      */
     @Lock(LockType.WRITE)
-    public Partida createPartida() throws PartidaException {
+    public void createPartida() throws PartidaException {
         if (getPartidaActual(false) != null) {
             throw new PartidaException("Ja hi ha una partida en marxa");
         }
@@ -151,10 +151,10 @@ public class AppSingleton {
         partida.setParaules(SelectorParaules.getLlistatParaules(partida.getDificultat()));
         partida.setComencada(0);
         log.log(Level.INFO, "Creada nova partida amb dificultat {0} i amb data de {1}", new Object[]{partida.getDificultat(), partida.getDataPartida()});
+        em.persist(partida);
         TimerConfig timerConfig = new TimerConfig();
         timerConfig.setPersistent(false);
         Timer timer = timerService.createSingleActionTimer(300000, timerConfig);
-        return partida;
     }
 
     /**
@@ -188,7 +188,7 @@ public class AppSingleton {
     }
 
     /**
-     * Timeout que finalitza la partida després de 300 segons.
+     * Timeout que finalitza la partida després de 300000 milisegons.
      * @param timer 
      */
     @Timeout

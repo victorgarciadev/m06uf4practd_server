@@ -8,8 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.PreDestroy;
 import javax.ejb.ConcurrencyManagement;
 import javax.ejb.ConcurrencyManagementType;
+import javax.ejb.Remove;
 import javax.ejb.Stateful;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
@@ -61,6 +63,17 @@ public class UsuariEJB implements IUsuari {
         }
         //  throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
+    
+    @Remove
+    @Override
+    public void tancaSessio() {
+        log.log(Level.INFO, "Finalitzant sessió de PartidaEJB...");
+    }
+    
+    @PreDestroy
+    public void destroy() {
+        log.log(Level.INFO, "UsuariEJB finalitzant...");
+    }
 
     @Override
     public Usuari getUsuari(String email) {
@@ -94,13 +107,6 @@ public class UsuariEJB implements IUsuari {
             throw new PartidaException(ex.toString());
         }
         return usuaris;
-    }
-
-    @Override
-    public void actualitzarPuntuacioUsuari(Usuari usuari, int puntuacio) {
-        log.log(Level.INFO, "Actualizant puntuaci\u00f3 de l'' usuari {0}...", usuari.getNickname());
-        usuari.setPuntuacio(puntuacio);
-        em.merge(usuari);
     }
 
     @Override

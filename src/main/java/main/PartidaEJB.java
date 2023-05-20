@@ -4,28 +4,22 @@ import common.IPartida;
 import common.Partida;
 import common.PartidaException;
 import common.PartidaPuntuacio;
-import common.SalaEspera;
 import common.Usuari;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import javax.ejb.ConcurrencyManagement;
 import javax.ejb.ConcurrencyManagementType;
 import javax.ejb.EJB;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
+import javax.ejb.Remove;
 import javax.ejb.Stateful;
 import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
@@ -50,48 +44,25 @@ public class PartidaEJB implements IPartida {
     @EJB
     private AppSingleton gameSingleton;
 
-    private static final Logger log = Logger.getLogger(PartidaEJB.class.getName());
-    private SalaEspera se;
+    @EJB
+    private WaitingSingleton waitingRoom;
 
-    @PostConstruct
-    public void onStartup() {
-        checkPartida("hall");
+    private static final Logger log = Logger.getLogger(PartidaEJB.class.getName());
+
+    @Remove
+    @Override
+    public void tancaSessio() {
+        log.log(Level.INFO, "Finalitzant sessió de PartidaEJB...");
+    }
+
+    @PreDestroy
+    public void destroy() {
+        log.log(Level.INFO, "UsuariEJB finalitzant...");
     }
 
     @Override
     public void checkPartida(String pantalla) {
-        if (gameSingleton.getPartidaActual(false) == null) {
-            log.log(Level.INFO, "Inicialitzant programa... iniciant sala d'espera");
-            try {
-                se = em.createQuery("SELECT se FROM SalaEspera se", SalaEspera.class).getSingleResult();
-                waitingRoom();
-            } catch (NoResultException ex) {
-                Date dateComenca = new Date();
-                dateComenca.setMinutes(dateComenca.getMinutes() + 2);
-                se = new SalaEspera(dateComenca);
-                try {
-                    persisteixTransaccio(se);
-                    novaPartida();
-                } catch (PartidaException e) {
-                    log.log(Level.SEVERE, "Error de persist\u00e8ncia a la base de dades: {0}", e.toString());
-                }
-            }
-        } else {
-            log.log(Level.INFO, "Ja hi ha una partida iniciada");
-            Partida p = gameSingleton.getPartidaActual(false);
-            if (p.getComencada() == 1) {
-                Date newDate = p.getDataPartida();
-                if (pantalla.equals("joc")) {
-                    newDate.setMinutes(newDate.getMinutes() + 5);
-                } else {
-                    newDate.setMinutes(newDate.getMinutes() + 7);
-                }
-                se = new SalaEspera(newDate);
-            } else {
-                se = em.createQuery("SELECT se FROM SalaEspera se", SalaEspera.class).getSingleResult();
-                waitingRoom();
-            }
-        }
+        //waitingRoom.getSalaEsperaActual(pantalla);
     }
 
     @Override
@@ -114,9 +85,10 @@ public class PartidaEJB implements IPartida {
         if (puntuacio != null) {
             puntuacio.setPunts(puntuacio.getPunts() + punts);
             puntuacio.setRonda(ronda);
-            if (temps < puntuacio.getMenorTempsEncert() && punts > 0) {
+            if (ronda == 0 && punts > 0) {
                 puntuacio.setMenorTempsEncert(temps);
             }
+            actualitzarPuntuacioUsuari(jugador, jugador.getPuntuacio() + puntuacio.getPunts());
             try {
                 mergeTransaccio(puntuacio);
                 log.log(Level.INFO, "Puntuaci\u00f3 de l''usuari {0}actualitzada correctament", jugador.getNickname());
@@ -131,6 +103,7 @@ public class PartidaEJB implements IPartida {
             novaPuntuacio.setPunts(punts);
             novaPuntuacio.setMenorTempsEncert(temps);
             novaPuntuacio.setRonda(ronda);
+            actualitzarPuntuacioUsuari(jugador, jugador.getPuntuacio() + punts);
             try {
                 persisteixTransaccio(novaPuntuacio);
                 log.log(Level.INFO, "Puntuaci\u00f3 de l''usuari {0}actualitzada correctament", jugador.getNickname());
@@ -141,18 +114,19 @@ public class PartidaEJB implements IPartida {
         }
     }
 
-    @Override
-    public void novaPartida() {
+    /**
+     * Actualitza la puntuació total de l'usuari
+     *
+     * @param usuari usuari actual
+     * @param puntuacio puntuació a afegir a l'usuari
+     */
+    public void actualitzarPuntuacioUsuari(Usuari usuari, int puntuacio) {
+        log.log(Level.INFO, "Actualizant puntuaci\u00f3 de l'' usuari {0}...", usuari.getNickname());
+        usuari.setPuntuacio(puntuacio);
         try {
-            Partida partida = gameSingleton.createPartida();
-            try {
-                persisteixTransaccio(partida);
-                log.log(Level.INFO, "Nova partida comen\u00e7ada correctament amb ID: {0}", partida.getId());
-            } catch (PartidaException ex) {
-                log.log(Level.SEVERE, "Error al crear nova partida: {0}", ex.toString());
-            }
+            mergeTransaccio(usuari);
         } catch (PartidaException ex) {
-            log.log(Level.WARNING, "Ja hi ha en marxa una partida: {0}", ex.toString());
+            log.log(Level.SEVERE, "Error de persist\u00e8ncia a l''actualitzar la puntuaci\u00f3 del jugador {0}:{1}", new Object[]{usuari.getNickname(), ex.toString()});
         }
     }
 
@@ -207,6 +181,7 @@ public class PartidaEJB implements IPartida {
 
     /**
      * Retorna els jugadors que han pasat de ronda.
+     *
      * @param p partida actual
      * @param ronda número de ronda
      * @return llista de jugadors
@@ -219,38 +194,8 @@ public class PartidaEJB implements IPartida {
     }
 
     @Override
-    @Lock(LockType.WRITE)
-    public void waitingRoom() {
-        int timeRemaining;
-        do {
-            timeRemaining = timeRemaining();
-            log.log(Level.INFO, "esperant per començar la partida ... " + timeRemaining);
-        } while (timeRemaining > 0);
-        Partida p = gameSingleton.getPartidaActual(false);
-        p.setComencada(1);
-        try {
-            mergeTransaccio(p);
-            log.log(Level.INFO, "waitingRoom() --> partida començada");
-        } catch (PartidaException ex) {
-            log.log(Level.SEVERE, "Error al posar la partida en marxa: {0}", ex.toString());
-        }
-    }
-
-    @Override
-    public int timeRemaining() {
-        if (se != null) {
-            Date horaComenca = se.getHoraComenca();
-            log.log(Level.INFO, ">>>> Hora comença " + horaComenca);
-            Date actualDate = new Date();
-            log.log(Level.INFO, ">>> hora actual " + actualDate);
-            Instant startDate = horaComenca.toInstant();
-            Instant endDate = actualDate.toInstant();
-            Duration duration = Duration.between(endDate, startDate);
-            log.log(Level.INFO, ">>> diferencia " + duration.getSeconds());
-            return (int) duration.getSeconds();
-        } else {
-            return 0;
-        }
+    public int timeRemaining(String pantalla) {
+        return waitingRoom.timeRemaining(pantalla);
     }
 
     @Override
@@ -273,6 +218,7 @@ public class PartidaEJB implements IPartida {
 
     /**
      * Mètode que calcula els punts que s'han d'afegir a un usuari
+     *
      * @param resultat string de la paraula comprovada
      * @param ronda ronda actual
      * @return int total punts nous
@@ -283,7 +229,6 @@ public class PartidaEJB implements IPartida {
         List<String> paraules = p.getParaules();
         String words = paraules.get(0);
         String pActual = getParaulaRonda(words, ronda);
-
 
         if (pActual.equals(resultat)) {
             punts += resultat.length();
@@ -307,9 +252,10 @@ public class PartidaEJB implements IPartida {
 
         return punts;
     }
-    
+
     /**
      * Mètode que retorna la paraula de la ronda actual de una partida
+     *
      * @param words String amb totes les paraules de la partida
      * @param ronda ronda actual
      * @return String paraula actual
@@ -325,9 +271,11 @@ public class PartidaEJB implements IPartida {
     }
 
     /**
-     * Mètode que persisteix un objecte a la BD després de comprovar les validacions
+     * Mètode que persisteix un objecte a la BD després de comprovar les
+     * validacions
+     *
      * @param ob
-     * @throws PartidaException 
+     * @throws PartidaException
      */
     private void persisteixTransaccio(Object ob) throws PartidaException {
         List<String> errors = Validadors.validaBean(ob);
@@ -350,9 +298,11 @@ public class PartidaEJB implements IPartida {
     }
 
     /**
-     * Mètode que actualitza un objecte a la BD després de comprovar les validacions
+     * Mètode que actualitza un objecte a la BD després de comprovar les
+     * validacions
+     *
      * @param ob
-     * @throws PartidaException 
+     * @throws PartidaException
      */
     private void mergeTransaccio(Object ob) throws PartidaException {
         List<String> errors = Validadors.validaBean(ob);

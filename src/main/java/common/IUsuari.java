@@ -26,6 +26,11 @@ public interface IUsuari {
     public Usuari getUsuari(String email);
     
     /**
+     * Tancar sessió d'EJB
+     */
+    public void tancaSessio();
+    
+    /**
      * Retorna una llista amb tots els usuaris
      * @return llista d'usuaris
      * @throws common.PartidaException 
@@ -38,13 +43,6 @@ public interface IUsuari {
      * @throws common.PartidaException 
      */
     public List<Usuari> getUsuarisEsperant() throws PartidaException;
-    
-    /**
-     * Actualitza la puntuació total de l'usuari
-     * @param usuari usuari actual
-     * @param puntuacio puntuació a afegir a l'usuari
-     */
-    public void actualitzarPuntuacioUsuari(Usuari usuari, int puntuacio);
     
     /**
      * Retorna la puntuació total històrica de l'usuari

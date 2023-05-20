@@ -9,17 +9,17 @@ import javax.ejb.Remote;
  */
 @Remote
 public interface IPartida {
-    
-   /**
-    * Comença una nova partida
-    */
-    public void novaPartida();
 
     /**
      * Mètode que checkeja l'estat del servidor
      * @param pantalla a la que està el client
      */
     public void checkPartida(String pantalla);
+    
+    /**
+     * Tancar sessió d'EJB
+     */
+    public void tancaSessio();
     
     /**
      * Actualitza la puntuació d'un jugador a una partida
@@ -56,11 +56,6 @@ public interface IPartida {
     public List<Usuari> getJugadorsPartidaAmbPuntuacio(Partida p);
     
     /**
-     * Mètode que controla el temps d'espera entre partida i partida
-     */
-    public void waitingRoom();
-    
-    /**
      * Mètode que retorna la dificultat de la partida que s'esta jugant actualment
      * @return string amb la dificultat de la partida
      */
@@ -75,7 +70,8 @@ public interface IPartida {
     
     /**
      * Mètode que retorna el temps que falta pel canvi de pantalla entre el joc i la sala d'espera
+     * @param pantalla actual
      * @return int segons que falten
      */
-    public int timeRemaining();
+    public int timeRemaining(String pantalla);
 }
