@@ -154,7 +154,7 @@ public class AppSingleton {
         em.persist(partida);
         TimerConfig timerConfig = new TimerConfig();
         timerConfig.setPersistent(false);
-        Timer timer = timerService.createSingleActionTimer(300000, timerConfig);
+        Timer timer = timerService.createSingleActionTimer(298000, timerConfig);
     }
 
     /**
