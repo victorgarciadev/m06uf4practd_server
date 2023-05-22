@@ -128,8 +128,22 @@ public class UsuariEJB implements IUsuari {
     @Override
     public void setUsuariJugant(Usuari usuari) {
         log.log(Level.INFO, "Canviant estat de l''usuari {0} a jugant.", usuari.getNickname());
-        usuari.setJugadorActual(true);
-        em.merge(usuari);
+        usuari.setJugadorActual(1);
+        try {
+            mergeTransaccio(usuari);
+        } catch (PartidaException ex) {
+            log.log(Level.SEVERE, "Error de base de dades canviat l'estat de l'usuari");
+        }
+    }
+    
+    public void setUsuariDesactiu(Usuari usuari) {
+        log.log(Level.INFO, "Canviant estat de l''usuari {0} a desactiu.", usuari.getNickname());
+        usuari.setJugadorActual(0);
+        try {
+            mergeTransaccio(usuari);
+        } catch (PartidaException ex) {
+            log.log(Level.SEVERE, "Error de base de dades canviat l'estat de l'usuari");
+        }
     }
 
     /**
@@ -165,5 +179,24 @@ public class UsuariEJB implements IUsuari {
         }
 
         return ob;
+    }
+    
+    private void mergeTransaccio(Object ob) throws PartidaException {
+        List<String> errors = Validadors.validaBean(ob);
+
+        if (errors.isEmpty()) {
+            try {
+                userTransaction.begin();
+                em.merge(ob);
+                userTransaction.commit();
+                log.log(Level.INFO, "Dades desades correctament a la BD --> {0}", ob.toString());
+            } catch (SystemException | HeuristicMixedException | HeuristicRollbackException | SecurityException | IllegalStateException | javax.transaction.NotSupportedException | javax.transaction.RollbackException ex) {
+                log.log(Level.WARNING, "Error desant dades a la BD: {0}", ex.toString());
+                throw new PartidaException("Error desant: " + ex.toString());
+            }
+        } else {
+            log.log(Level.WARNING, "Error de validaci\u00f3 de dades: {0}", errors.toString());
+            throw new PartidaException("Error de validació de dades: " + errors.toString());
+        }
     }
 }

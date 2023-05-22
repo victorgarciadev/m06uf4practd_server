@@ -56,4 +56,6 @@ public interface IUsuari {
      * @param usuari usuari actual
      */
     public void setUsuariJugant(Usuari usuari);
+    
+    public void setUsuariDesactiu(Usuari usuari);
 }

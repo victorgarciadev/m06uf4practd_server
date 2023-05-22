@@ -25,12 +25,12 @@ public class Usuari implements Serializable {
     
     private int puntuacio;
     
-    private boolean jugadorActual;
+    private int jugadorActual;
 
     public Usuari() {
     }
 
-    public Usuari(String email, String nickname, int puntuacio, boolean jugadorActual) {
+    public Usuari(String email, String nickname, int puntuacio, int jugadorActual) {
         this.email = email;
         this.nickname = nickname;
         this.puntuacio = puntuacio;
@@ -66,13 +66,15 @@ public class Usuari implements Serializable {
         this.puntuacio = puntuacio;
     }
 
-    public boolean isJugadorActual() {
+    public int isJugadorActual() {
         return jugadorActual;
     }
 
-    public void setJugadorActual(boolean jugadorActual) {
+    public void setJugadorActual(int jugadorActual) {
         this.jugadorActual = jugadorActual;
     }
+    
+    
 
     @Override
     public int hashCode() {
