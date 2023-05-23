@@ -59,12 +59,7 @@ public class PartidaEJB implements IPartida {
 
     @PreDestroy
     public void destroy() {
-        log.log(Level.INFO, "UsuariEJB finalitzant...");
-    }
-
-    @Override
-    public void checkPartida(String pantalla) {
-        //waitingRoom.getSalaEsperaActual(pantalla);
+        log.log(Level.INFO, "PartidaEJB finalitzant...");
     }
 
     @Override
@@ -209,7 +204,10 @@ public class PartidaEJB implements IPartida {
         return p.getDificultat();
     }
 
-    @Override
+    /**
+     * Mètode que retorna les paraules a endevinar de la partida
+     * @return llista amb totes les paraules
+     */
     public List<String> getParaulesPartida() {
         Partida p = gameSingleton.getPartidaActual(true);
         List<String> nestedList = p.getParaules();

@@ -9,12 +9,6 @@ import javax.ejb.Remote;
  */
 @Remote
 public interface IPartida {
-
-    /**
-     * Mètode que checkeja l'estat del servidor
-     * @param pantalla a la que està el client
-     */
-    public void checkPartida(String pantalla);
     
     /**
      * Tancar sessió d'EJB
@@ -60,13 +54,6 @@ public interface IPartida {
      * @return string amb la dificultat de la partida
      */
     public String getDificultatPartidaActual();
-    
-    
-    /**
-     * Mètode que retorna les paraules a endevinar de la partida
-     * @return llista amb totes les paraules
-     */
-    public List<String> getParaulesPartida();
     
     /**
      * Mètode que retorna el temps que falta pel canvi de pantalla entre el joc i la sala d'espera

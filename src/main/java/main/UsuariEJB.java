@@ -57,19 +57,16 @@ public class UsuariEJB implements IUsuari {
             persisteixAmbTransaccio(u);
 
         } catch (PartidaException e) {
-//            String msg = "No ha pogut guardar l'usuari a la BBDD";
-//            log.log(Level.INFO, msg);
             throw new PartidaException(e.getMessage());
         }
-        //  throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
-    
+
     @Remove
     @Override
     public void tancaSessio() {
-        log.log(Level.INFO, "Finalitzant sessió de PartidaEJB...");
+        log.log(Level.INFO, "Finalitzant sessió de UsuariEJB...");
     }
-    
+
     @PreDestroy
     public void destroy() {
         log.log(Level.INFO, "UsuariEJB finalitzant...");
@@ -79,7 +76,6 @@ public class UsuariEJB implements IUsuari {
     public Usuari getUsuari(String email) {
         try {
             Usuari user = em.find(Usuari.class, email);
-            System.out.println("Usuario login");
             return user;
         } catch (NoResultException ex) {
             return null;
@@ -135,7 +131,8 @@ public class UsuariEJB implements IUsuari {
             log.log(Level.SEVERE, "Error de base de dades canviat l'estat de l'usuari");
         }
     }
-    
+
+    @Override
     public void setUsuariDesactiu(Usuari usuari) {
         log.log(Level.INFO, "Canviant estat de l''usuari {0} a desactiu.", usuari.getNickname());
         usuari.setJugadorActual(0);
@@ -169,7 +166,7 @@ public class UsuariEJB implements IUsuari {
             } catch (NotSupportedException | SystemException | RollbackException | HeuristicMixedException | HeuristicRollbackException | SecurityException | IllegalStateException ex) {
                 String msg = "Error desant: " + errors.toString();
                 log.log(Level.INFO, msg);
-                throw new PartidaException(msg);
+                throw new PartidaException("Error desant: " + ex.toString());
             }
 
         } else {
@@ -180,7 +177,14 @@ public class UsuariEJB implements IUsuari {
 
         return ob;
     }
-    
+
+    /**
+     * Mètode que actualitza un objecte a la BD després de comprovar les
+     * validacions
+     *
+     * @param ob
+     * @throws PartidaException
+     */
     private void mergeTransaccio(Object ob) throws PartidaException {
         List<String> errors = Validadors.validaBean(ob);
 

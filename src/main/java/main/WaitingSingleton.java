@@ -50,6 +50,10 @@ public class WaitingSingleton {
         log.log(Level.INFO, "Inicialitzant WaitingSingleton.");
     }
 
+    /**
+     * Mètode que comença la partida dins la waitingRoom per preparar la següent fase,
+     * canviar l'estat de la partida a començada i posara l'hora final de la partida
+     */
     @Lock(LockType.WRITE)
     public void waitingRoom() {
         Partida p = gameSingleton.getPartidaActual(false);
@@ -63,6 +67,11 @@ public class WaitingSingleton {
         }
     }
 
+    /**
+     * Mètode que retorna els temps restant que falta per canviar de pantalla
+     * @param pantalla pantalla actual
+     * @return int temps d'espera
+     */
     @Lock(LockType.WRITE)
     public int timeRemaining(String pantalla) {
         SalaEspera se = getSalaEsperaActual(pantalla);
@@ -78,6 +87,12 @@ public class WaitingSingleton {
 
     }
     
+    /**
+     * Mètode que retorna la sala d'espera actual: si no hi ha cap creada crea una nova,
+     * si no, depenent de la pantalla retorna un temps d'espera o un altre
+     * @param pantalla pantalla actual
+     * @return SalaEspera temps d'espera
+     */
     @Lock(LockType.WRITE)
     public SalaEspera getSalaEsperaActual(String pantalla) {
         Partida p = gameSingleton.getPartidaActual(false);

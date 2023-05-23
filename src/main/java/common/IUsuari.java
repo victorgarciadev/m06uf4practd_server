@@ -57,5 +57,9 @@ public interface IUsuari {
      */
     public void setUsuariJugant(Usuari usuari);
     
+    /**
+     * Mètode que canviar l'estat del jugador a desactiu
+     * @param usuari usuari actual
+     */
     public void setUsuariDesactiu(Usuari usuari);
 }
