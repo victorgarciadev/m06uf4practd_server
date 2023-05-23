@@ -14,6 +14,8 @@ import javax.annotation.PreDestroy;
 import javax.ejb.ConcurrencyManagement;
 import javax.ejb.ConcurrencyManagementType;
 import javax.ejb.EJB;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
 import javax.ejb.Remove;
 import javax.ejb.Stateful;
 import javax.ejb.TransactionManagement;
@@ -66,6 +68,7 @@ public class PartidaEJB implements IPartida {
     }
 
     @Override
+    @Lock(LockType.WRITE)
     public void actualitzarPuntuacio(Usuari jugador, String resultat, int ronda, double temps) throws PartidaException {
 
         int punts = calcularPuntsRonda(resultat, ronda);
