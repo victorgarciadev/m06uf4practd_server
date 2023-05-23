@@ -13,6 +13,8 @@ import javax.annotation.Resource;
 import javax.ejb.ConcurrencyManagement;
 import javax.ejb.ConcurrencyManagementType;
 import javax.ejb.EJB;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ejb.Timeout;
@@ -48,13 +50,20 @@ public class WaitingSingleton {
         log.log(Level.INFO, "Inicialitzant WaitingSingleton.");
     }
 
+    @Lock(LockType.WRITE)
     public void waitingRoom() {
         Partida p = gameSingleton.getPartidaActual(false);
-        p.setComencada(1);
-        em.merge(p);
-        log.log(Level.INFO, "waitingRoom() --> partida començada");
+        if (p.getComencada() == 0) {
+            Date dataComencada = new Date();
+            dataComencada.setMinutes(dataComencada.getMinutes() + 3);
+            p.setComencada(1);
+            p.setDataPartida(dataComencada);
+            em.merge(p);
+            log.log(Level.INFO, "waitingRoom() --> partida començada");
+        }
     }
 
+    @Lock(LockType.WRITE)
     public int timeRemaining(String pantalla) {
         SalaEspera se = getSalaEsperaActual(pantalla);
         Date horaComenca = se.getHoraComenca();
@@ -62,13 +71,14 @@ public class WaitingSingleton {
         Date actualDate = new Date();
         log.log(Level.INFO, ">>> hora actual " + actualDate);
         Instant startDate = horaComenca.toInstant();
-        Instant endDate = actualDate.toInstant();
-        Duration duration = Duration.between(endDate, startDate);
+        Instant now = actualDate.toInstant();
+        Duration duration = Duration.between(now, startDate);
         log.log(Level.INFO, ">>> diferencia " + duration.getSeconds());
         return (int) duration.getSeconds();
 
     }
-
+    
+    @Lock(LockType.WRITE)
     public SalaEspera getSalaEsperaActual(String pantalla) {
         Partida p = gameSingleton.getPartidaActual(false);
         if (p == null) {
@@ -95,9 +105,9 @@ public class WaitingSingleton {
             if (p.getComencada() == 1) {
                 Date newDate = p.getDataPartida();
                 if (pantalla.equals("joc")) {
-                    newDate.setMinutes(newDate.getMinutes() + 5);
+                    newDate.setMinutes(newDate.getMinutes());
                 } else {
-                    newDate.setMinutes(newDate.getMinutes() + 7);
+                    newDate.setMinutes(newDate.getMinutes() + 5);
                 }
                 return new SalaEspera(newDate);
             } else {
@@ -106,10 +116,11 @@ public class WaitingSingleton {
             }
         }
     }
-    
+
     /**
      * Timeout que finalitza la waitingRoom després de 115000 milisegons.
-     * @param timer 
+     *
+     * @param timer
      */
     @Timeout
     public void timeout(Timer timer) {

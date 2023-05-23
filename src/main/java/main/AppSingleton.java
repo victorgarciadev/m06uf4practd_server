@@ -135,7 +135,6 @@ public class AppSingleton {
 
     /**
      * Crea una nova partida amb dificultat i paraules random
-     * @return Partida creada
      * @throws PartidaException 
      */
     @Lock(LockType.WRITE)
@@ -154,7 +153,7 @@ public class AppSingleton {
         em.persist(partida);
         TimerConfig timerConfig = new TimerConfig();
         timerConfig.setPersistent(false);
-        Timer timer = timerService.createSingleActionTimer(298000, timerConfig);
+        Timer timer = timerService.createSingleActionTimer(295000, timerConfig);
     }
 
     /**
@@ -188,7 +187,7 @@ public class AppSingleton {
     }
 
     /**
-     * Timeout que finalitza la partida després de 300000 milisegons.
+     * Timeout que finalitza la partida després de 295000 milisegons.
      * @param timer 
      */
     @Timeout
@@ -201,6 +200,7 @@ public class AppSingleton {
      * Mètode per finalitzar la partida. Canvia l'estat d'actual a 0 i esborra la taula
      * SalaEspera de la BD
      */
+    @Lock(LockType.WRITE)
     public void finalitzaPartida() {
         Partida pActual = getPartidaActual(false);
         if (pActual != null) {
@@ -213,6 +213,8 @@ public class AppSingleton {
             } catch (Exception ex) {
                 log.log(Level.SEVERE, "Error al finalitzar la partida o a l'esborrar la taula SalaEspera: {0}", ex.toString());
             }
+        } else {
+            log.log(Level.WARNING, "finalitzatPartida() --> No hi ha cap partida en marxa");
         }
     }
 }
