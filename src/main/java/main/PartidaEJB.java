@@ -82,7 +82,7 @@ public class PartidaEJB implements IPartida {
 
         if (puntuacio != null) {
             puntuacio.setPunts(puntuacio.getPunts() + punts);
-            puntuacio.setRonda(ronda);
+            puntuacio.setRonda(ronda + 1);
             if (ronda == 0 && punts > 0) {
                 puntuacio.setMenorTempsEncert(temps);
             }
@@ -100,7 +100,7 @@ public class PartidaEJB implements IPartida {
             novaPuntuacio.setUsuari(jugador);
             novaPuntuacio.setPunts(punts);
             novaPuntuacio.setMenorTempsEncert(temps);
-            novaPuntuacio.setRonda(ronda);
+            novaPuntuacio.setRonda(ronda + 1);
             actualitzarPuntuacioUsuari(jugador, jugador.getPuntuacio() + punts);
             try {
                 persisteixTransaccio(novaPuntuacio);
@@ -206,6 +206,7 @@ public class PartidaEJB implements IPartida {
 
     /**
      * Mètode que retorna les paraules a endevinar de la partida
+     *
      * @return llista amb totes les paraules
      */
     public List<String> getParaulesPartida() {
